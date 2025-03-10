@@ -6,11 +6,11 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8010-8999:8010-8999"
     volumes:
       - .:/app
       - /app/node_modules
       - /app/.next
     environment:
-      - PORT=8000
+      - PORT=0
       - HOST=0.0.0.0

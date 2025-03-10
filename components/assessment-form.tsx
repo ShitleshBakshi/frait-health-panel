@@ -1,34 +1,36 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
-import { useAssessmentStore } from "@/lib/assessment-store"
-import {
-    AssessmentFormItem,
-    ASSESSMENT_LEVELS,
-    type AssessmentLevel,
-    type Assessment
-} from "@/type/assessment"
+import type { AssessmentLevel } from "@/type/assessment"
+
+export interface AssessmentItems {
+    id: number
+    title: string
+    level: AssessmentLevel | null
+    info?: string
+}
+
+export interface AssessmentItem {
+    id: number
+    level: AssessmentLevel | null
+}
 
 export interface AssessmentFormProps {
     open: boolean
     onClose: () => void
     title: string
     subjectName: string
-    assessmentItems: AssessmentFormItem[]
-    onComplete?: () => void
+    assessmentItems: AssessmentItems[]
+    onComplete: (items: AssessmentItems[]) => void
     assessmentType: "mainParent" | "externalInfluence" | "supportingParent" | "child"
     subjectId?: string  // Required for supportingParent and child
 }
 
-export interface AssessmentItem {
-    id: number
-    title: string
-    level: AssessmentLevel | null
-    info?: string
-}
+
+export const ASSESSMENT_LEVELS: AssessmentLevel[] = ["no-concern", "low", "low-med", "med", "med-high", "high"]
 
 export function AssessmentForm({
                                    open,
@@ -39,9 +41,15 @@ export function AssessmentForm({
                                    onComplete,
                                    assessmentType,
                                }: AssessmentFormProps) {
-    const [assessments, setAssessments] = useState<AssessmentFormItem[]>(initialAssessmentItems)
+    const [assessments, setAssessments] = useState<AssessmentItems[]>(initialAssessmentItems)
     const { toast } = useToast()
-    const assessmentStore = useAssessmentStore()
+
+    useEffect(() => {
+        if (open && initialAssessmentItems) {
+            setAssessments(initialAssessmentItems)
+        }
+    }, [open, initialAssessmentItems])
+
 
     const handleLevelSelect = (itemId: number, selectedLevel: AssessmentLevel) => {
         setAssessments((current) =>
@@ -68,19 +76,8 @@ export function AssessmentForm({
     }
 
     const handleSubmit = () => {
-        // Extract just the id and level for storage
-        const assessmentData: Assessment = {
-            items: assessments.map(({ id, level }) => ({ id, level }))
-        }
 
-        switch (assessmentType) {
-            case "mainParent":
-                assessmentStore.updateMainParentAssessment(assessmentData)
-                break
-            case "externalInfluence":
-                assessmentStore.updateExternalInfluenceAssessment(assessmentData)
-                break
-        }
+        onComplete(assessments)
 
         toast({
             title: "Assessment updated",
@@ -88,7 +85,6 @@ export function AssessmentForm({
             duration: 2000,
         })
 
-        onComplete?.()
         onClose()
     }
 

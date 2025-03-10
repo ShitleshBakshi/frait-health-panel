@@ -55,29 +55,3 @@ export interface Assessment {
 
 // Helper constants
 export const ASSESSMENT_LEVELS: AssessmentLevel[] = ["no-concern", "low", "low-med", "med", "med-high", "high"]
-
-// Helper functions for assessment scoring
-export function getScoreForLevel(level: AssessmentLevel): number {
-    switch(level) {
-        case "no-concern": return 5;
-        case "low": return 4;
-        case "low-med": return 3;
-        case "med": return 2;
-        case "med-high": return 1;
-        case "high": return 0;
-        default: return 0;
-    }
-}
-
-export function getRowIndexForScore(score: number): number {
-    return 5 - score;
-}
-
-// Category scores for final assessment
-export interface CategoryScores {
-    "responsive-parenting": number;
-    "family-health": number;
-    engagement: number;
-    "family-support": number;
-    "socio-economic": number;
-}

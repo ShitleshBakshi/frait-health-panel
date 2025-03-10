@@ -1,8 +1,9 @@
 "use client"
 
 import React, {useEffect, useMemo, useState} from "react"
-import {useAssessmentStore} from "@/lib/assessment-store"
-import {assessmentMapping, type CategoryScores, getRowIndexForScore, getScoreForLevel} from "@/lib/assessment-utils"
+import {calculateCategoryScores,
+    calculateOverallScore,
+    shouldHighlightCell} from "@/lib/assessment-utils"
 import {ChevronDown, Clock, FileText, GaugeCircle, Trash2, Users} from "lucide-react"
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./ui/accordion"
 import {Alert, AlertDescription} from "./ui/alert"
@@ -20,13 +21,16 @@ import {ChildAssessment} from "./child-assessment"
 import {useRouter} from "next/navigation";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "./ui/dialog"
 import { useSelector, useDispatch } from "react-redux"
+import {
+    loadAssessment,
+    updateMainParentAssessment,
+    updateExternalInfluenceAssessment,
+    resetAssessment
+} from "@/lib/slices/assessmentSlice"
+import type { AssessmentItem } from "@/lib/slices/assessmentSlice"
 import { addFamilyAssessment } from "@/lib/slices/familySlice"
-import {RootState} from "@/lib/store";
-
-interface AssessmentItem {
-    id: number
-    level: AssessmentLevel | null
-}
+import type { RootState } from "@/lib/store"
+import type { AssessmentLevel } from "@/type/assessment"
 
 
 interface FamilyAssessmentProps {
@@ -56,22 +60,9 @@ interface AssessmentStatus {
         info: boolean
         assessment: boolean
     }
-    supportingParents: {
-        [key: string]: {
-            info: boolean
-            assessment: boolean
-        }
-    }
     externalInfluence: boolean
-    children: {
-        [key: string]: {
-            info: boolean
-            assessment: boolean
-        }
-    }
-}
 
-type AssessmentLevel = "no-concern"| "low" | "low-med" | "med" | "med-high" | "high"
+}
 
 interface FamilyAssessment {
     id: string
@@ -91,6 +82,9 @@ interface FamilyAssessment {
 export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: FamilyAssessmentProps) {
     const router = useRouter()
     const dispatch = useDispatch()
+    const { toast } = useToast()
+
+
     const [mainParentFormOpen, setMainParentFormOpen] = useState(false)
     const [mainParentAssessmentOpen, setMainParentAssessmentOpen] = useState(false)
     const [mainParentInfo, setMainParentInfo] = useState<ParentInfo | null>(null)
@@ -109,79 +103,44 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
     const [childAssessmentOpen, setChildAssessmentOpen] = useState(false)
     const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
 
+
     const [assessmentStatus, setAssessmentStatus] = useState<AssessmentStatus>({
         mainParent: {
             info: false,
             assessment: false,
         },
-        supportingParents: {},
         externalInfluence: false,
-        children: {},
     })
 
 
     const [fraiDialogOpen, setFraiDialogOpen] = useState(false)
 
-    const assessmentStore = useAssessmentStore()
-    const {toast} = useToast()
-    // Function to calculate category scores
-    const calculateCategoryScores = (): CategoryScores => {
-        const scores: CategoryScores = {
-            "responsive-parenting": 0,
-            "family-health": 0,
-            engagement: 0,
-            "family-support": 0,
-            "socio-economic": 0,
+    const assessmentData = useSelector((state: RootState) =>
+        assessmentId ? state.family.assessments.find(a => a.id === assessmentId) : null
+    )
+
+    const currentAssessment = useSelector((state: RootState) => state.assessment.currentAssessment)
+
+    const scores = useSelector((state: RootState) => calculateCategoryScores(state))
+    const overallScore = useMemo(() => calculateOverallScore(scores), [scores])
+
+    // Check if an assessment is complete
+    const isAssessmentComplete = useMemo(() => {
+        // Check if main parent info and assessment are complete
+        if (!assessmentStatus.mainParent.info || !assessmentStatus.mainParent.assessment) {
+            return false
         }
 
-        // Helper function to update scores
-        const updateScore = (
-            items: AssessmentItem[],
-            mapping: typeof assessmentMapping.mainParent | typeof assessmentMapping.externalInfluence,
-        ) => {
-            items.forEach((item) => {
-                if (item.level) {
-                    const category = mapping[item.id as keyof typeof mapping]
-                    if (category) {
-                        const score = getScoreForLevel(item.level)
-                        scores[category] = score
-                    }
-                }
-            })
+        // Check if external influence is assessed
+        if (!assessmentStatus.externalInfluence) {
+            return false
         }
 
-        // Process main parent assessment
-        updateScore(assessmentStore.mainParentAssessment.items, assessmentMapping.mainParent)
+        // If we reach here, all required assessments are complete
+        return true
+    }, [assessmentStatus])
 
-        // Process external influence assessment
-        updateScore(assessmentStore.externalInfluenceAssessment.items, assessmentMapping.externalInfluence)
-
-        return scores
-    }
-
-    // Add this function to calculate overall score
-    const calculateOverallScore = (scores: CategoryScores): number => {
-        return Object.values(scores).reduce((sum, score) => sum + score, 0)
-    }
-
-    // Update the Dialog content to show the calculated scores
-    const scores = calculateCategoryScores()
-    const overallScore = calculateOverallScore(scores)
-
-
-    const shouldHighlightCell = (rowIndex: number, colIndex: number): boolean => {
-        const categories = [
-            "responsive-parenting",
-            "family-health",
-            "engagement",
-            "family-support",
-            "socio-economic",
-        ] as const
-        const category = categories[colIndex]
-        const score = scores[category]
-        return score > 0 && rowIndex === getRowIndexForScore(score)
-    }
-
+    // Handlers for form submissions and actions
     const handleMainParentInfoSubmit = (data: Omit<ParentInfo, "id">) => {
         setMainParentInfo({ ...data, id: Date.now().toString() })
         setMainParentFormOpen(false)
@@ -195,21 +154,10 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         const newSupportingParent = { ...data, id: Date.now().toString() }
         setSupportingParentsInfo((prev) => [...prev, newSupportingParent])
         setSupportingParentFormOpen(false)
-        setAssessmentStatus((prev) => ({
-            ...prev,
-            supportingParents: {
-                ...prev.supportingParents,
-                [newSupportingParent.id]: { info: true, assessment: false },
-            },
-        }))
     }
 
     const handleDeleteSupportingParent = (id: string) => {
         setSupportingParentsInfo((prev) => prev.filter((parent) => parent.id !== id))
-        setAssessmentStatus((prev) => {
-            const { [id]: _, ...rest } = prev.supportingParents
-            return { ...prev, supportingParents: rest }
-        })
     }
 
     const handleAssessSupportingParent = (id: string) => {
@@ -218,24 +166,13 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
     }
 
     const handleChildInfoSubmit = (data: Omit<ChildInfo, "id">) => {
-        const newChild = {...data, id: Date.now().toString()}
+        const newChild = { ...data, id: Date.now().toString() }
         setChildrenInfo((prev) => [...prev, newChild])
         setChildInfoFormOpen(false)
-        setAssessmentStatus((prev) => ({
-            ...prev,
-            children: {
-                ...prev.children,
-                [newChild.id]: { info: true, assessment: false },
-            },
-        }))
     }
 
     const handleDeleteChild = (id: string) => {
         setChildrenInfo((prev) => prev.filter((child) => child.id !== id))
-        setAssessmentStatus((prev) => {
-            const { [id]: _, ...rest } = prev.children
-            return { ...prev, children: rest }
-        })
     }
 
     const handleAssessChild = (id: string) => {
@@ -243,7 +180,9 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         setChildAssessmentOpen(true)
     }
 
-    const handleMainParentAssessmentComplete = () => {
+    // Update Redux when assessments are completed
+    const handleMainParentAssessmentComplete = (items: AssessmentItem[]) => {
+        dispatch(updateMainParentAssessment(items))
         setAssessmentStatus((prev) => ({
             ...prev,
             mainParent: { ...prev.mainParent, assessment: true },
@@ -251,18 +190,8 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         setMainParentAssessmentOpen(false)
     }
 
-    const handleSupportingParentAssessmentComplete = (id: string) => {
-        setAssessmentStatus((prev) => ({
-            ...prev,
-            supportingParents: {
-                ...prev.supportingParents,
-                [id]: { ...prev.supportingParents[id], assessment: true },
-            },
-        }))
-        setSupportingParentAssessmentOpen(false)
-    }
-
-    const handleExternalInfluenceComplete = () => {
+    const handleExternalInfluenceComplete = (items: AssessmentItem[]) => {
+        dispatch(updateExternalInfluenceAssessment(items))
         setAssessmentStatus((prev) => ({
             ...prev,
             externalInfluence: true,
@@ -270,53 +199,10 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         setExternalInfluenceAssessmentOpen(false)
     }
 
-    const handleChildAssessmentComplete = (id: string) => {
-        setAssessmentStatus((prev) => ({
-            ...prev,
-            children: {
-                ...prev.children,
-                [id]: { ...prev.children[id], assessment: true },
-            },
-        }))
-        setChildAssessmentOpen(false)
-    }
-
-    const isAssessmentComplete = useMemo(() => {
-        // Check if main parent info and assessment are complete
-        if (!assessmentStatus.mainParent.info || !assessmentStatus.mainParent.assessment) {
-            return false
-        }
-
-        // Check if all supporting parents are assessed
-        const allSupportingParentsAssessed = Object.values(assessmentStatus.supportingParents).every(
-            (parent) => parent.info && parent.assessment,
-        )
-
-        if (!allSupportingParentsAssessed) {
-            return false
-        }
-
-        // Check if external influence is assessed
-        if (!assessmentStatus.externalInfluence) {
-            return false
-        }
-
-        // Check if all children are assessed
-        return Object.values(assessmentStatus.children).every(
-            (child) => child.info && child.assessment)
-    }, [assessmentStatus])
 
     const handleFinalize = () => {
         const assessmentId = Date.now().toString();
         const currentTime = new Date().toISOString();
-        const mainParentAssessmentItems = assessmentStore.mainParentAssessment.items.map(item => ({
-            id: item.id,
-            level: item.level
-        }));
-        const externalInfluenceAssessmentItems = assessmentStore.externalInfluenceAssessment.items.map(item => ({
-            id: item.id,
-            level: item.level
-        }));
 
         const familyAssessment: FamilyAssessment = {
             id: assessmentId,
@@ -324,17 +210,17 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
             mainParent: mainParentInfo!,
             supportingParents: supportingParentsInfo,
             children: childrenInfo,
-            mainParentAssessment: mainParentAssessmentItems,
-            externalInfluenceAssessment: externalInfluenceAssessmentItems,
+            mainParentAssessment: currentAssessment.mainParentAssessment,
+            externalInfluenceAssessment: currentAssessment.externalInfluenceAssessment,
             status: "DONE",
             assessorHv: "Current User",
             reviewerHv: "Current User",
             createdAt: currentTime,
             updatedAt: currentTime
-        };
+        }
 
-        // Dispatch the action to add the assessment to Redux
-        dispatch(addFamilyAssessment(familyAssessment));
+        // Save to Redux family slice
+        dispatch(addFamilyAssessment(familyAssessment))
 
         toast({
             title: "Assessment Finalized",
@@ -342,7 +228,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         });
 
 
-        assessmentStore.reset();
+        // dispatch(resetAssessment())
 
         setTimeout(() => {
             router.push(`/families/${familyId}`);
@@ -350,36 +236,34 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
     }
 
     useEffect(() => {
-        // Only run in view mode and when we have an assessmentId
-        if (mode === "view" && assessmentId) {
-            // Get assessment data from Redux
-            const assessmentData = useSelector((state: RootState) =>
-                state.family.assessments.find(assessment => assessment.id === assessmentId)
-            );
+        if (mode === "view" && assessmentId && assessmentData) {
+            // Load data into the Zustand store for score calculation
+            dispatch(loadAssessment({
+                assessmentId,
+                familyId: assessmentData.familyId,
+                mainParentAssessment: assessmentData.mainParentAssessment.map(item => ({
+                    id: item.id,
+                    level: item.level as AssessmentLevel
+                })),
+                externalInfluenceAssessment: assessmentData.externalInfluenceAssessment.map(item => ({
+                    id: item.id,
+                    level: item.level as AssessmentLevel
+                }))
+            }))
 
-            if (assessmentData) {
-                // Load data into the Zustand store for score calculation
-                assessmentStore.updateMainParentAssessment({
-                    items: assessmentData.mainParentAssessment.map(item => ({
-                        id: item.id,
-                        level: item.level as AssessmentLevel
-                    }))
-                });
+            // Set display data
+            setMainParentInfo(assessmentData.mainParent);
+            setSupportingParentsInfo(assessmentData.supportingParents);
+            setChildrenInfo(assessmentData.children);
 
-                assessmentStore.updateExternalInfluenceAssessment({
-                    items: assessmentData.externalInfluenceAssessment.map(item => ({
-                        id: item.id,
-                        level: item.level as AssessmentLevel
-                    }))
-                });
-
-                // Set display data
-                setMainParentInfo(assessmentData.mainParent);
-                setSupportingParentsInfo(assessmentData.supportingParents);
-                setChildrenInfo(assessmentData.children);
-            }
+            // Mark all sections as completed in view mode
+            setAssessmentStatus({
+                mainParent: { info: true, assessment: true },
+                externalInfluence: true,
+            });
         }
-    }, [mode, assessmentId]);
+    }, [mode, assessmentId, assessmentData, dispatch]);
+
 
     if (mode === "view") {
         return (
@@ -555,7 +439,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                                         {rowTexts.map((text, colIndex) => (
                                             <React.Fragment key={colIndex}>
                                                 <td
-                                                    className={`border p-2 ${shouldHighlightCell(rowIndex, colIndex) ? "bg-yellow-200" : ""}`}
+                                                    className={`border p-2 ${shouldHighlightCell(rowIndex, colIndex, scores) ? "bg-yellow-200" : ""}`}
                                                 >
                                                     {text}
                                                 </td>
@@ -861,7 +745,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                             ? supportingParentsInfo.find((p) => p.id === selectedSupportingParentId)?.firstName || ""
                             : ""
                     }
-                    onComplete={() => handleSupportingParentAssessmentComplete(selectedSupportingParentId!)}
+                    onComplete={() => {/* No action needed */}}
                     assessmentType={"supportingParent"}
                 />
                 <ExternalInfluenceAssessment
@@ -883,7 +767,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                     open={childAssessmentOpen}
                     onClose={() => setChildAssessmentOpen(false)}
                     childName={selectedChildId ? childrenInfo.find((c) => c.id === selectedChildId)?.firstName || "" : ""}
-                    onComplete={() => handleChildAssessmentComplete(selectedChildId!)}
+                    onComplete={() => {/* No action needed */}}
                     assessmentType={"child"}
                 />
                 <div className="h-16" />
@@ -891,4 +775,3 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         </div>
     )
 }
-

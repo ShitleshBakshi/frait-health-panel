@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import {useEffect, useState} from "react"
 import { Input } from "./ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
 import { Button } from "./ui/button"
 import {ChevronLeft, ChevronRight, MoreHorizontal, Plus, Clock, Eye, Copy, FileText} from "lucide-react"
 import Link from "next/link"
-import { setFamilyAssessments } from "@/lib/slices/familySlice"
-import {useSelector} from "react-redux";
+import { setCurrentFamily } from "@/lib/slices/familySlice"
+import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "@/lib/store";
 import type { FamilyAssessment } from "@/type/assessment"
 
@@ -38,8 +38,9 @@ export function FamiliesContent({
                                     initialFamilyId,
                                     showAssessments: initialShowAssessments = false,
                                 }: FamiliesContentProps)  {
+    const dispatch = useDispatch();
     const [searchTerm, setSearchTerm] = useState("")
-    const [selectedFamily, setSelectedFamily] = useState<Family | null>(initialFamilyId ? families.find((f) => f.id.toString() === initialFamilyId) || null : null,)
+    const [selectedFamily, setSelectedFamily] = useState<Family | null>(initialFamilyId ? families.find((f) => f.id.toString() === initialFamilyId) || null : null)
     const [showAssessments, setShowAssessments] = useState(initialShowAssessments || !!initialFamilyId)
     const assessments = useSelector((state: RootState) => state.family.assessments)
     const filteredFamilies = families.filter((family) => family.name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -47,7 +48,12 @@ export function FamiliesContent({
     const handleFamilySelect = (family: Family) => {
         setSelectedFamily(family)
         setShowAssessments(true)
+        dispatch(setCurrentFamily(family.id.toString()));
     }
+
+    const filteredAssessments = selectedFamily
+        ? assessments.filter(assessment => assessment.familyId === selectedFamily.id.toString())
+        : [];
 
     const renderActionButtons = (assessment: FamilyAssessment) => {
         return (
@@ -96,6 +102,12 @@ export function FamiliesContent({
             </div>
         )
     }
+
+    useEffect(() => {
+        if (initialFamilyId) {
+            dispatch(setCurrentFamily(initialFamilyId));
+        }
+    }, [dispatch, initialFamilyId]);
 
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -224,45 +236,60 @@ export function FamiliesContent({
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {assessments
-                                    .filter((assessment) => assessment.familyId === selectedFamily?.id.toString())
-                                    .map((assessment) => (
-                                        <TableRow key={assessment.id}>
-                                            <TableCell>{assessment.id}</TableCell>
-                                            <TableCell>
-                                                <span
-                                                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                                        assessment.status === "DONE"
-                                                            ? "bg-green-100 text-green-800"
-                                                            : assessment.status === "IN PROGRESS"
-                                                                ? "bg-blue-100 text-blue-800"
-                                                                : "bg-gray-100 text-gray-800"
-                                                    }`}
-                                                >
-                                                  {assessment.status}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell>{assessment.assessorHv}</TableCell>
-                                            <TableCell>{assessment.reviewerHv || "-"}</TableCell>
-                                            <TableCell>{assessment.createdAt}</TableCell>
-                                            <TableCell>{assessment.updatedAt}</TableCell>
-                                            <TableCell>{renderActionButtons(assessment)}</TableCell>
-                                        </TableRow>
-                                    ))}
+                                {filteredAssessments.map((assessment) => (
+                                    <TableRow key={assessment.id}>
+                                        <TableCell>{assessment.id.slice(0, 8)}</TableCell>
+                                        <TableCell>
+                                            <span
+                                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                    assessment.status === "DONE"
+                                                        ? "bg-green-100 text-green-800"
+                                                        : assessment.status === "IN PROGRESS"
+                                                            ? "bg-blue-100 text-blue-800"
+                                                            : "bg-gray-100 text-gray-800"
+                                                }`}
+                                            >
+                                                {assessment.status}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell>{assessment.assessorHv}</TableCell>
+                                        <TableCell>{assessment.reviewerHv || "-"}</TableCell>
+                                        <TableCell>{new Date(assessment.createdAt).toLocaleDateString()}</TableCell>
+                                        <TableCell>{new Date(assessment.updatedAt).toLocaleDateString()}</TableCell>
+                                        <TableCell>{renderActionButtons(assessment)}</TableCell>
+                                    </TableRow>
+                                ))}
+                                {filteredAssessments.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-4 text-gray-500">
+                                            No assessments found for this family. Create a new assessment to get started.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </div>
 
                     <div className="flex items-center justify-center space-x-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm"
+                                onClick={() => {
+                                    setSelectedFamily(null);
+                                    setShowAssessments(false);
+                                }}>
                             <ChevronLeft className="h-4 w-4" />
+                            Back to families
                         </Button>
-                        <Button variant="outline" size="sm" className="bg-blue-600 text-white hover:bg-blue-700">
-                            1
-                        </Button>
-                        <Button variant="outline" size="sm">
-                            <ChevronRight className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center space-x-2">
+                            <Button variant="outline" size="sm" disabled={filteredAssessments.length <= 5}>
+                                <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" className="bg-blue-600 text-white hover:bg-blue-700">
+                                1
+                            </Button>
+                            <Button variant="outline" size="sm" disabled={filteredAssessments.length <= 5}>
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                 </div>
             )}

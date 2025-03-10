@@ -1,11 +1,11 @@
-import { AssessmentForm, type AssessmentFormProps, type AssessmentItem } from "./assessment-form"
+import { AssessmentForm, type AssessmentFormProps, type AssessmentItems } from "./assessment-form"
 
 type SupportingParentAssessmentProps = Pick<AssessmentFormProps, "open" | "onClose" | "assessmentType"> & {
     parentName: string
     onComplete: () => void
 }
 
-const SupportingParentAssessmentItems: AssessmentItem[] = [
+const SupportingParentAssessmentItems: AssessmentItems[] = [
     {
         id: 1,
         title: "Supporting Parent/Carer's physical health",
