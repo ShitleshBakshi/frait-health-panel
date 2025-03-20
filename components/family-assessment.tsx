@@ -1,10 +1,10 @@
 "use client"
 
-import React, {useEffect, useMemo, useState} from "react"
+import React, {useEffect, useMemo, useState, useRef} from "react"
 import {calculateCategoryScores,
     calculateOverallScore,
     shouldHighlightCell} from "@/lib/assessment-utils"
-import {ChevronDown, Clock, FileText, GaugeCircle, Trash2, Users} from "lucide-react"
+import {ChevronDown, Clock, Eye, FileText, GaugeCircle, Trash2, Users} from "lucide-react"
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "./ui/accordion"
 import {Alert, AlertDescription} from "./ui/alert"
 import {useToast} from "@/components/ui/use-toast"
@@ -25,16 +25,31 @@ import {
     loadAssessment,
     updateMainParentAssessment,
     updateExternalInfluenceAssessment,
-    resetAssessment
+    AssessmentItem,
+    resetAssessment,
+    startNewAssessment
 } from "@/lib/slices/assessmentSlice"
-import type { AssessmentItem } from "@/lib/slices/assessmentSlice"
+import {
+    setFamilyId,
+    setMainParent,
+    updateMainParent,
+    removeMainParent,
+    addSupportingParent,
+    removeSupportingParent,
+    addChild,
+    removeChild,
+    setSaving,
+    setError
+} from "@/lib/slices/familyDetailsSlice";
+import { saveFamilyDetails } from "@/lib/thunks/familyDetailsThunks";
+// import type { ParentInfo } from "@/lib/slices/familyDetailsSlice";
+import { saveAssessmentToBackend } from "@/lib/thunks/assessment-thunks";
 import { addFamilyAssessment } from "@/lib/slices/familySlice"
-import type { RootState } from "@/lib/store"
+import type {AppDispatch, RootState} from "@/lib/store"
 import type { AssessmentLevel } from "@/type/assessment"
 
-
 interface FamilyAssessmentProps {
-    familyId: string
+    familyId: number
     assessmentId?: string
     mode?: "edit" | "view"
 }
@@ -66,7 +81,7 @@ interface AssessmentStatus {
 
 interface FamilyAssessment {
     id: string
-    familyId: string
+    familyId: number
     mainParent: ParentInfo
     supportingParents: ParentInfo[]
     children: ChildInfo[]
@@ -81,9 +96,15 @@ interface FamilyAssessment {
 
 export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: FamilyAssessmentProps) {
     const router = useRouter()
-    const dispatch = useDispatch()
+    const dispatch = useDispatch<AppDispatch>()
     const { toast } = useToast()
 
+    const prevFamilyIdRef = useRef<number | undefined | null>(null);
+    const prevAssessmentIdRef = useRef<string | undefined | null>(null);
+
+    const family = useSelector((state: RootState) =>
+        state.family.families.find(f => f.id === familyId)
+    );
 
     const [mainParentFormOpen, setMainParentFormOpen] = useState(false)
     const [mainParentAssessmentOpen, setMainParentAssessmentOpen] = useState(false)
@@ -199,45 +220,42 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         setExternalInfluenceAssessmentOpen(false)
     }
 
-
-    const handleFinalize = () => {
-        const assessmentId = Date.now().toString();
-        const currentTime = new Date().toISOString();
-
-        const familyAssessment: FamilyAssessment = {
-            id: assessmentId,
-            familyId,
-            mainParent: mainParentInfo!,
-            supportingParents: supportingParentsInfo,
-            children: childrenInfo,
-            mainParentAssessment: currentAssessment.mainParentAssessment,
-            externalInfluenceAssessment: currentAssessment.externalInfluenceAssessment,
-            status: "DONE",
-            assessorHv: "Current User",
-            reviewerHv: "Current User",
-            createdAt: currentTime,
-            updatedAt: currentTime
+    useEffect(() => {
+        // Case 1: Different family ID (new family)
+        if (prevFamilyIdRef.current && prevFamilyIdRef.current !== familyId) {
+            console.log("New family detected - resetting assessment state");
+            dispatch(resetAssessment());
+            dispatch(startNewAssessment({ familyId }));
+            setAssessmentStatus({
+                mainParent: {
+                    info: false,
+                    assessment: false,
+                },
+                externalInfluence: false,
+            });
         }
 
-        // Save to Redux family slice
-        dispatch(addFamilyAssessment(familyAssessment))
+        // Case 2: Same family but different assessment ID (new assessment for same family)
+        else if (
+            familyId === prevFamilyIdRef.current &&
+            prevAssessmentIdRef.current &&
+            assessmentId !== prevAssessmentIdRef.current
+        ) {
+            console.log("New assessment for same family - resetting assessment state");
+            dispatch(resetAssessment());
+            dispatch(startNewAssessment({ familyId }));
+            setAssessmentStatus({
+                mainParent: {
+                    info: false,
+                    assessment: false,
+                },
+                externalInfluence: false,
+            });
+        }
 
-        toast({
-            title: "Assessment Finalized",
-            description: "The assessment has been successfully finalized.",
-        });
-
-
-        // dispatch(resetAssessment())
-
-        setTimeout(() => {
-            router.push(`/families/${familyId}`);
-        }, 2000);
-    }
-
-    useEffect(() => {
-        if (mode === "view" && assessmentId && assessmentData) {
-            // Load data into the Zustand store for score calculation
+        // Case 3: Initial load with assessmentId (viewing existing assessment)
+        else if (mode === "view" && assessmentId && assessmentData) {
+            // Load the assessment into Redux for viewing
             dispatch(loadAssessment({
                 assessmentId,
                 familyId: assessmentData.familyId,
@@ -249,7 +267,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                     id: item.id,
                     level: item.level as AssessmentLevel
                 }))
-            }))
+            }));
 
             // Set display data
             setMainParentInfo(assessmentData.mainParent);
@@ -262,7 +280,74 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                 externalInfluence: true,
             });
         }
-    }, [mode, assessmentId, assessmentData, dispatch]);
+        // Case 4: First initialization without assessment ID (new assessment)
+        else if (!assessmentId && !prevFamilyIdRef.current) {
+            dispatch(resetAssessment());
+            dispatch(startNewAssessment({ familyId }));
+        }
+
+        // Update references for next comparison
+        prevFamilyIdRef.current = familyId;
+        prevAssessmentIdRef.current = assessmentId;
+    }, [familyId, assessmentId, mode, dispatch, assessmentData]);
+
+
+    const handleFinalize = async () => {
+        const assessmentId = Date.now().toString();
+        const currentTime = new Date().toISOString();
+
+        try {
+            // First, save the assessment data to the backend
+            const saveResult = await dispatch(saveAssessmentToBackend()).unwrap();
+
+            if (!saveResult.success) {
+                toast({
+                    title: "Error",
+                    description: "Failed to save assessment to server. Please try again.",
+                    variant: "destructive"
+                });
+                return;
+            }
+
+            const familyAssessment: FamilyAssessment = {
+                id: assessmentId,
+                familyId,
+                mainParent: mainParentInfo!,
+                supportingParents: supportingParentsInfo,
+                children: childrenInfo,
+                mainParentAssessment: currentAssessment.mainParentAssessment,
+                externalInfluenceAssessment: currentAssessment.externalInfluenceAssessment,
+                status: "DONE",
+                assessorHv: "Current User",
+                reviewerHv: "Current User",
+                createdAt: currentTime,
+                updatedAt: currentTime
+            }
+
+            // Save to Redux family slice
+            dispatch(addFamilyAssessment(familyAssessment))
+
+            toast({
+                title: "Assessment Finalized",
+                description: "The assessment has been successfully finalized.",
+            });
+
+
+            dispatch(resetAssessment())
+
+            setTimeout(() => {
+                router.push(`/families/${familyId}`);
+            }, 2000);
+        }
+        catch (error) {
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "An unexpected error occurred",
+                variant: "destructive"
+            });
+        }
+    }
+
 
 
     if (mode === "view") {
@@ -270,7 +355,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
             <div className="p-6 max-w-7xl mx-auto space-y-4">
                 <div className="flex items-center gap-2 p-4 bg-blue-50 rounded-lg">
                     <Users className="h-5 w-5 text-blue-600" />
-                    <span className="text-blue-600 font-medium">Family: Stevens</span>
+                    <span className="text-blue-600 font-medium">Family: {family?.name || "Unknown"}</span>
                 </div>
 
                 <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-700">
@@ -302,6 +387,15 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                                         <span className="text-blue-600">{`${mainParentInfo?.firstName} ${mainParentInfo?.lastName}`}</span>
                                         <span className="text-gray-500">({mainParentInfo?.dateOfBirth})</span>
                                     </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                        onClick={() => setMainParentAssessmentOpen(true)}
+                                    >
+                                        <Eye className="h-4 w-4 mr-1" />
+                                        View Assessment
+                                    </Button>
                                 </div>
                             </div>
                         </AccordionContent>
@@ -317,14 +411,30 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pt-2 pb-4">
                             <div className="pl-9 space-y-4">
-                                {supportingParentsInfo.map((parent) => (
-                                    <div key={parent.id} className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-blue-600">{`${parent.firstName} ${parent.lastName}`}</span>
-                                            <span className="text-gray-500">({parent.dateOfBirth})</span>
+                                {supportingParentsInfo.length > 0 ? (
+                                    supportingParentsInfo.map((parent) => (
+                                        <div key={parent.id} className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-blue-600">{`${parent.firstName} ${parent.lastName}`}</span>
+                                                <span className="text-gray-500">({parent.dateOfBirth})</span>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                onClick={() => {
+                                                    setSelectedSupportingParentId(parent.id)
+                                                    setSupportingParentAssessmentOpen(true)
+                                                }}
+                                            >
+                                                <Eye className="h-4 w-4 mr-1" />
+                                                View Assessment
+                                            </Button>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <p className="text-gray-500">No supporting parents/carers</p>
+                                )}
                             </div>
                         </AccordionContent>
                     </AccordionItem>
@@ -343,6 +453,15 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                                     <div className="flex items-center gap-2">
                                         <span className="text-blue-600">{`${mainParentInfo?.firstName} ${mainParentInfo?.lastName}`}</span>
                                     </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                        onClick={() => setExternalInfluenceAssessmentOpen(true)}
+                                    >
+                                        <Eye className="h-4 w-4 mr-1" />
+                                        View Assessment
+                                    </Button>
                                 </div>
                             </div>
                         </AccordionContent>
@@ -366,14 +485,30 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                                     />
                                 </FormField>
 
-                                {childrenInfo.map((child) => (
-                                    <div key={child.id} className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-blue-600">{`${child.firstName} ${child.lastName}`}</span>
-                                            <span className="text-gray-500">({child.dateOfBirth})</span>
+                                {childrenInfo.length > 0 ? (
+                                    childrenInfo.map((child) => (
+                                        <div key={child.id} className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-blue-600">{`${child.firstName} ${child.lastName}`}</span>
+                                                <span className="text-gray-500">({child.dateOfBirth})</span>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                onClick={() => {
+                                                    setSelectedChildId(child.id)
+                                                    setChildAssessmentOpen(true)
+                                                }}
+                                            >
+                                                <Eye className="h-4 w-4 mr-1" />
+                                                View Assessment
+                                            </Button>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <p className="text-gray-500">No children</p>
+                                )}
                             </div>
                         </AccordionContent>
                     </AccordionItem>
@@ -487,7 +622,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
             <div className="max-w-5xl mx-auto space-y-6">
                 <div className="flex items-center gap-2">
                     <Users className="h-6 w-6 text-blue-600" />
-                    <h1 className="text-2xl font-semibold text-gray-900">Family: Stevens</h1>
+                    <h1 className="text-2xl font-semibold text-gray-900">Family: {family?.name || "Unknown"}</h1>
                 </div>
                 <div className="space-y-4">
                     <div className="bg-gray-50 p-4 rounded-lg">

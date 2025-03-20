@@ -57,7 +57,6 @@ export function InfoForm({
     const [informationProvider, setInformationProvider] = useState(false)
     const { toast } = useToast()
 
-    console.log("Test Info Log")
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -73,7 +72,6 @@ export function InfoForm({
             dateOfBirth: date ? format(date, "dd/MM/yyyy") : "",
             gender: finalGender,
         }
-        console.log(data)
         onSubmit(data)
 
         toast({

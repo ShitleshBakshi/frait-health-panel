@@ -6,7 +6,10 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 
-export function withAuth(WrappedComponent: React.ComponentType, allowedRoles: string[]) {
+export function withAuth<P extends object>(
+    WrappedComponent: React.ComponentType<P>,
+    allowedRoles: string[]
+) {
     return function AuthenticatedComponent(props: any) {
         const { user } = useAuth()
         const router = useRouter()

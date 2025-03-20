@@ -14,6 +14,7 @@ import userReducer from "./slices/userSlice";
 import familyReducer from "./slices/familySlice";
 import registrationReducer from "./slices/registrationSlice";
 import assessmentReducer from "./slices/assessmentSlice";
+import familyDetailsReducer from "./slices/familyDetailsSlice";
 
 // Define persist configuration type
 interface PersistConfig {
@@ -26,7 +27,7 @@ interface PersistConfig {
 const persistConfig: PersistConfig = {
     key: 'root',
     storage,
-    whitelist: ['user', 'family'],
+    whitelist: ['user', 'family', 'familyDetails'],
 };
 
 // Combine reducers
@@ -35,6 +36,7 @@ const rootReducer = combineReducers({
     family: familyReducer,
     registration: registrationReducer,
     assessment: assessmentReducer,
+    familyDetails: familyDetailsReducer,
 });
 
 // Create persisted reducer

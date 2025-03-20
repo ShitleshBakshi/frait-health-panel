@@ -8,9 +8,7 @@ services:
     ports:
       - "8010-8999:8010-8999"
     volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
+      - ./:/app/src
     environment:
       - PORT=0
       - HOST=0.0.0.0

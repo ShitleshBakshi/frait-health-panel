@@ -35,7 +35,7 @@ export interface ChildInfo {
 // Complete family assessment data
 export interface FamilyAssessment {
     id: string
-    familyId: string
+    familyId: number
     status: "DRAFT" | "IN PROGRESS" | "DONE"
     assessorHv: string
     reviewerHv: string | null

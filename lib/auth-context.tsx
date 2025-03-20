@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const login = async (username: string, password: string): Promise<User>  => {
         // Mock login logic
-        if (username === "admin" && password === "Admin123456789012") {
+        if (username === "admin" && password === "Admin1234567890123") {
             const user: User = { id: "1", username: "admin", role: "super_admin", healthBoard: "Swansea Uni Health Board" }
             setUser(user)
             localStorage.setItem("user", JSON.stringify(user))

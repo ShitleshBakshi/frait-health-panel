@@ -6,28 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Button } from "./ui/button"
 import {ChevronLeft, ChevronRight, MoreHorizontal, Plus, Clock, Eye, Copy, FileText} from "lucide-react"
 import Link from "next/link"
-import { setCurrentFamily } from "@/lib/slices/familySlice"
+import { setCurrentFamily, addFamily, addFamiliesBulk, fetchFamilies, type Family } from "@/lib/slices/familySlice"
 import {useDispatch, useSelector} from "react-redux";
-import {RootState} from "@/lib/store";
+import {RootState, AppDispatch} from "@/lib/store";
 import type { FamilyAssessment } from "@/type/assessment"
-
-interface Family {
-    id: number
-    name: string
-    town: string
-    postcode: string
-    updatedAt: string
-}
-
-const families: Family[] = [
-    {
-        id: 3,
-        name: "Stevens",
-        town: "Pontypridd",
-        postcode: "CF37 1DL",
-        updatedAt: "20-10-2022 13:45:41",
-    },
-]
+import {useToast} from "@/hooks/use-toast";
+import {NewFamilyForm} from "@/components/NewFamilyForm";
+import {Alert, AlertDescription} from "@/components/ui/alert";
 
 interface FamiliesContentProps {
     initialFamilyId?: string
@@ -38,17 +23,105 @@ export function FamiliesContent({
                                     initialFamilyId,
                                     showAssessments: initialShowAssessments = false,
                                 }: FamiliesContentProps)  {
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
+    const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState("")
-    const [selectedFamily, setSelectedFamily] = useState<Family | null>(initialFamilyId ? families.find((f) => f.id.toString() === initialFamilyId) || null : null)
+    const [selectedFamily, setSelectedFamily] = useState<Family | null>(null)
     const [showAssessments, setShowAssessments] = useState(initialShowAssessments || !!initialFamilyId)
+    const [newFamilyFormOpen, setNewFamilyFormOpen] = useState(false)
+
+    // Get families & assessments from Redux store
+    const families = useSelector((state: RootState) => state.family.families)
     const assessments = useSelector((state: RootState) => state.family.assessments)
-    const filteredFamilies = families.filter((family) => family.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    const nextFamilyId = useSelector((state: RootState) => state.family.nextFamilyId)
+    const loading = useSelector((state: RootState) => state.family.loading)
+    const error = useSelector((state: RootState) => state.family.error)
+
+    // Filter families based on search term
+    const filteredFamilies = families.filter((family) =>
+        family && family.name ?
+            family.name.toLowerCase().includes(searchTerm.toLowerCase()) :
+            false)
 
     const handleFamilySelect = (family: Family) => {
         setSelectedFamily(family)
         setShowAssessments(true)
         dispatch(setCurrentFamily(family.id.toString()));
+    }
+
+    // Initial load of family data
+    useEffect(() => {
+        dispatch(fetchFamilies())
+    }, [dispatch])
+
+    // Set selected family from initialFamilyId
+    useEffect(() => {
+        if (initialFamilyId) {
+            const family = families.find(f => f.id.toString() === initialFamilyId)
+            if (family) {
+                setSelectedFamily(family)
+                dispatch(setCurrentFamily(initialFamilyId))
+            }
+        }
+    }, [initialFamilyId, families, dispatch])
+
+    // Handler for adding a new family manually
+    const handleAddFamily = async (familyData: any) => {
+        try {
+            await dispatch(addFamily(familyData)).unwrap()
+            toast({
+                title: "Success",
+                description: "Family  has been added successfully."
+            })
+            setNewFamilyFormOpen(false)
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: error as string,
+                variant: "destructive"
+            })
+        }
+    }
+
+    // Handler for importing families from Excel
+    const handleExcelUpload = async (familiesData: any[]) => {
+        try {
+            await dispatch(addFamiliesBulk(familiesData)).unwrap()
+            toast({
+                title: "Success",
+                description: `${familiesData.length} families imported successfully`
+            })
+            setNewFamilyFormOpen(false)
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: error as string,
+                variant: "destructive"
+            })
+        }
+    }
+
+    // const handleExcelUpload = (familiesData: any[]) => {
+    //     // Process the data and assign unique IDs
+    //     const newFamilies: Family[] = familiesData.map(data => ({
+    //         id: `excel-${Date.now()}-${Math.floor(Math.random() * 1000)}`, // Generate a unique ID
+    //         name: data.name,
+    //         nhsNumber: data.nhsNumber,
+    //         childDob: data.childDob,
+    //         updatedAt: data.updatedAt
+    //     }));
+    //
+    //     dispatch(addFamilies(newFamilies));
+    //     setNewFamilyFormOpen(false);
+    // };
+
+    // Handle refresh button click
+    const handleRefresh = () => {
+        dispatch(fetchFamilies())
+        toast({
+            title: "Refreshing",
+            description: "Fetching the latest families data"
+        })
     }
 
     const filteredAssessments = selectedFamily
@@ -68,7 +141,7 @@ export function FamiliesContent({
                     </Link>
                 )}
                 <Link
-                    href={`/families/${assessment.familyId}/assessment/${assessment.id}`}
+                    href={`/families/${assessment.familyId}/assessment/${assessment.id}?mode=view`}
                     className="flex items-center gap-1 text-blue-600 hover:text-blue-700"
                 >
                     <Eye className="h-4 w-4" />
@@ -103,19 +176,26 @@ export function FamiliesContent({
         )
     }
 
-    useEffect(() => {
-        if (initialFamilyId) {
-            dispatch(setCurrentFamily(initialFamilyId));
-        }
-    }, [dispatch, initialFamilyId]);
-
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6">
             {!showAssessments ? (
                 <>
-                    <div>
+                    <div className="flex justify-between items-center">
                         <h1 className="text-2xl font-semibold text-gray-900">Families</h1>
+                        <Button
+                            onClick={() => setNewFamilyFormOpen(true)}
+                            className="bg-blue-600 hover:bg-blue-700"
+                        >
+                            <Plus className="mr-2 h-4 w-4" /> New Family
+                        </Button>
                     </div>
+
+                    {/* Error alert if there's an error from Redux */}
+                    {error && (
+                        <Alert variant="destructive">
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
 
                     <div className="space-y-4">
                         <Input
@@ -131,8 +211,7 @@ export function FamiliesContent({
                                     <TableRow>
                                         <TableHead className="w-16">#</TableHead>
                                         <TableHead>NAME</TableHead>
-                                        <TableHead>TOWN</TableHead>
-                                        <TableHead>POSTCODE</TableHead>
+                                        <TableHead>NHS NUMBER</TableHead>
                                         <TableHead>UPDATED AT</TableHead>
                                         <TableHead className="w-16">ACTIONS</TableHead>
                                     </TableRow>
@@ -142,8 +221,7 @@ export function FamiliesContent({
                                         <TableRow key={family.id}>
                                             <TableCell>{family.id}</TableCell>
                                             <TableCell>{family.name}</TableCell>
-                                            <TableCell>{family.town}</TableCell>
-                                            <TableCell>{family.postcode}</TableCell>
+                                            <TableCell>{family.nhsNumber || "-"}</TableCell>
                                             <TableCell>{family.updatedAt}</TableCell>
                                             <TableCell>
                                                 <Button
@@ -293,6 +371,12 @@ export function FamiliesContent({
                     </div>
                 </div>
             )}
+            <NewFamilyForm
+                open={newFamilyFormOpen}
+                onClose={() => setNewFamilyFormOpen(false)}
+                onSubmit={handleAddFamily}
+                onExcelUpload={handleExcelUpload}
+            />
         </div>
     )
 }

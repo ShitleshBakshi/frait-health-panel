@@ -13,7 +13,7 @@ interface AssessmentState {
     currentAssessment: {
         mainParentAssessment: AssessmentItem[];
         externalInfluenceAssessment: AssessmentItem[];
-        familyId: string | null;
+        familyId: number | null;
         assessmentId: string | null;
     };
     // Loading status
@@ -39,7 +39,7 @@ const assessmentSlice = createSlice({
     initialState,
     reducers: {
         // Start a new assessment
-        startNewAssessment: (state, action: PayloadAction<{ familyId: string }>) => {
+        startNewAssessment: (state, action: PayloadAction<{ familyId: number }>) => {
             state.currentAssessment = {
                 ...initialState.currentAssessment,
                 familyId: action.payload.familyId,
@@ -53,7 +53,7 @@ const assessmentSlice = createSlice({
             assessmentId: string;
             mainParentAssessment: AssessmentItem[];
             externalInfluenceAssessment: AssessmentItem[];
-            familyId: string;
+            familyId: number;
         }>) => {
             state.currentAssessment = {
                 mainParentAssessment: action.payload.mainParentAssessment,
@@ -78,6 +78,8 @@ const assessmentSlice = createSlice({
         // Clear current assessment
         resetAssessment: (state) => {
             state.currentAssessment = initialState.currentAssessment;
+            state.loading = false;
+            state.error = null;
         },
 
         // Set loading state
