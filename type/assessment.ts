@@ -45,6 +45,8 @@ export interface FamilyAssessment {
     supportingParents: ParentInfo[]
     children: ChildInfo[]
     mainParentAssessment: AssessmentItem[]
+    supportingParentAssessment: AssessmentItem[]
+    childAssessment: AssessmentItem[]
     externalInfluenceAssessment: AssessmentItem[]
 }
 

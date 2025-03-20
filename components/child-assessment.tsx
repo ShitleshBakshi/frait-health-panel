@@ -1,8 +1,9 @@
 import { AssessmentForm, type AssessmentFormProps, type AssessmentItems } from "./assessment-form"
+import type {AssessmentItem} from "@/lib/slices/assessmentSlice";
 
 type ChildAssessmentProps = Pick<AssessmentFormProps, "open" | "onClose" | "assessmentType"> & {
     childName: string
-    onComplete: () => void
+    onComplete:  (items: AssessmentItem[]) => void
 }
 
 const childAssessmentItems: AssessmentItems[] = [

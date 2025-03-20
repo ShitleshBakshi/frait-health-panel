@@ -125,7 +125,7 @@ export function FamiliesContent({
     }
 
     const filteredAssessments = selectedFamily
-        ? assessments.filter(assessment => assessment.familyId === selectedFamily.id.toString())
+        ? assessments.filter(assessment => assessment.familyId === selectedFamily.id)
         : [];
 
     const renderActionButtons = (assessment: FamilyAssessment) => {
@@ -316,7 +316,9 @@ export function FamiliesContent({
                             <TableBody>
                                 {filteredAssessments.map((assessment) => (
                                     <TableRow key={assessment.id}>
-                                        <TableCell>{assessment.id.slice(0, 8)}</TableCell>
+                                        <TableCell>{assessment.id.includes('_')
+                                            ? assessment.id.split('_')[1]
+                                            : assessment.id.slice(0, 8)}</TableCell>
                                         <TableCell>
                                             <span
                                                 className={`px-2 py-1 rounded-full text-xs font-medium ${

@@ -3,15 +3,7 @@
   <database-model serializer="dbm" dbms="POSTGRES" family-id="POSTGRES" format-version="4.53">
     <root id="1">
       <DateStyle>mdy</DateStyle>
-      <Grants>1||-9223372036854775808|c|G
-1||10|c|G
-1||10|C|G
-1||10|T|G
-4||-9223372036854775808|c|G
-4||10|c|G
-4||10|C|G
-4||10|T|G</Grants>
-      <IntrospectionStateNumber>1019</IntrospectionStateNumber>
+      <IntrospectionStateNumber>1028</IntrospectionStateNumber>
       <ServerVersion>16.3</ServerVersion>
       <StartupTime>1742292288</StartupTime>
       <TimeZones>true ACDT
@@ -1406,7 +1398,7 @@ true posixrules
 13189||10|C|G
 13189||-9223372036854775808|U|G
 13189||10|U|G</Grants>
-      <IntrospectionStateNumber>1020</IntrospectionStateNumber>
+      <IntrospectionStateNumber>1028</IntrospectionStateNumber>
       <ObjectId>16384</ObjectId>
       <OwnerName>frait_health_backend</OwnerName>
     </database>
@@ -6523,8 +6515,8 @@ true posixrules
     <schema id="264" parent="2" name="public">
       <Comment>standard public schema</Comment>
       <Current>1</Current>
-      <IntrospectionStateNumber>1020</IntrospectionStateNumber>
-      <LastIntrospectionLocalTimestamp>2025-03-20.07:12:07</LastIntrospectionLocalTimestamp>
+      <IntrospectionStateNumber>1028</IntrospectionStateNumber>
+      <LastIntrospectionLocalTimestamp>2025-03-20.12:21:51</LastIntrospectionLocalTimestamp>
       <ObjectId>2200</ObjectId>
       <StateNumber>524</StateNumber>
       <OwnerName>pg_database_owner</OwnerName>

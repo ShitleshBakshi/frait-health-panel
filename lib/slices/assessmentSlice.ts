@@ -12,6 +12,8 @@ interface AssessmentState {
     // Current editing state (temporary data)
     currentAssessment: {
         mainParentAssessment: AssessmentItem[];
+        supportingParentAssessment: AssessmentItem[];
+        childAssessment: AssessmentItem[];
         externalInfluenceAssessment: AssessmentItem[];
         familyId: number | null;
         assessmentId: string | null;
@@ -25,6 +27,8 @@ interface AssessmentState {
 const initialState: AssessmentState = {
     currentAssessment: {
         mainParentAssessment: [],
+        supportingParentAssessment: [],
+        childAssessment: [],
         externalInfluenceAssessment: [],
         familyId: null,
         assessmentId: null
@@ -52,11 +56,15 @@ const assessmentSlice = createSlice({
         loadAssessment: (state, action: PayloadAction<{
             assessmentId: string;
             mainParentAssessment: AssessmentItem[];
+            supportingParentAssessment?: AssessmentItem[];
+            childAssessment?: AssessmentItem[];
             externalInfluenceAssessment: AssessmentItem[];
             familyId: number;
         }>) => {
             state.currentAssessment = {
                 mainParentAssessment: action.payload.mainParentAssessment,
+                supportingParentAssessment: action.payload.supportingParentAssessment || [],
+                childAssessment: action.payload.childAssessment || [],
                 externalInfluenceAssessment: action.payload.externalInfluenceAssessment,
                 familyId: action.payload.familyId,
                 assessmentId: action.payload.assessmentId
@@ -68,6 +76,16 @@ const assessmentSlice = createSlice({
         // Update main parent assessment items
         updateMainParentAssessment: (state, action: PayloadAction<AssessmentItem[]>) => {
             state.currentAssessment.mainParentAssessment = action.payload;
+        },
+
+        // Update supporting parent assessment items
+        updateSupportingParentAssessment: (state, action: PayloadAction<AssessmentItem[]>) => {
+            state.currentAssessment.supportingParentAssessment = action.payload;
+        },
+
+        // Update child assessment items
+        updateChildAssessment: (state, action: PayloadAction<AssessmentItem[]>) => {
+            state.currentAssessment.childAssessment = action.payload;
         },
 
         // Update external influence assessment items
@@ -99,6 +117,8 @@ export const {
     startNewAssessment,
     loadAssessment,
     updateMainParentAssessment,
+    updateSupportingParentAssessment,
+    updateChildAssessment,
     updateExternalInfluenceAssessment,
     resetAssessment,
     setLoading,

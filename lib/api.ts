@@ -62,11 +62,11 @@ export const SAVE_FRAT_ASSESSMENT_MUTATION = `
  * GraphQL mutation for saving FRAI assessment
  * This mutation sends the calculated scores for each category
  */
-export const SAVE_FRAI_ASSESSMENT_MUTATION = `
-  mutation CreateFraiAssessment($fraiInput: FraiAssessmentInput!) {
-    createInitialFraiAssessment(frai_input: $fraiInput)
-  }
-`;
+// export const SAVE_FRAI_ASSESSMENT_MUTATION = `
+//   mutation CreateFraiAssessment($fraiInput: FraiAssessmentInput!) {
+//     createInitialFraiAssessment(frai_input: $fraiInput)
+//   }
+// `;
 
 /**
  * Helper function to dynamically generate a FRAT assessment mutation

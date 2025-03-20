@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
 export default function AssessmentPage({ params, searchParams }: {
-    params: { id: string; assessid: string };
+    params: { id: number; assessid: string };
     searchParams?: { mode?: string }
 }) {
     // Implement authentication directly instead of using withAuth

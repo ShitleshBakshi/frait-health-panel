@@ -2,11 +2,11 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import {
     fetchGraphQL,
     SAVE_FRAT_ASSESSMENT_MUTATION,
-    SAVE_FRAI_ASSESSMENT_MUTATION
+    // SAVE_FRAI_ASSESSMENT_MUTATION
 } from "@/lib/api";
 import {
     generateFratPayload,
-    generateFraiPayload
+    // generateFraiPayload
 } from '@/lib/assessment-mapping-utils';
 import type { RootState } from "@/lib/store";
 import { setLoading, setError } from "@/lib/slices/assessmentSlice";
@@ -23,7 +23,11 @@ export const saveAssessmentToBackend = createAsyncThunk(
         try {
             dispatch(setLoading(true));
             const state = getState() as RootState;
-            const { mainParentAssessment, externalInfluenceAssessment, familyId } = state.assessment.currentAssessment;
+            const { mainParentAssessment,
+                    supportingParentAssessment,
+                    childAssessment,
+                    externalInfluenceAssessment,
+                    familyId } = state.assessment.currentAssessment;
 
             if (!familyId) {
                 throw new Error("No family ID available for the assessment");
@@ -33,6 +37,8 @@ export const saveAssessmentToBackend = createAsyncThunk(
             const fratVariables = generateFratPayload(
                 familyId,
                 mainParentAssessment,
+                supportingParentAssessment,
+                childAssessment,
                 externalInfluenceAssessment
             );
 
@@ -44,17 +50,17 @@ export const saveAssessmentToBackend = createAsyncThunk(
             }
 
             // Step 3: Generate and save FRAI scores using the utility function
-            const fraiVariables = generateFraiPayload(
-                familyId,
-                mainParentAssessment,
-                externalInfluenceAssessment
-            );
+            // const fraiVariables = generateFraiPayload(
+            //     familyId,
+            //     mainParentAssessment,
+            //     externalInfluenceAssessment
+            // );
 
-            const fraiResult = await fetchGraphQL(SAVE_FRAI_ASSESSMENT_MUTATION, fraiVariables);
-
-            if (!fraiResult.createInitialFraiAssessment) {
-                throw new Error("Failed to save FRAI assessment");
-            }
+            // const fraiResult = await fetchGraphQL(SAVE_FRAI_ASSESSMENT_MUTATION, fraiVariables);
+            //
+            // if (!fraiResult.createInitialFraiAssessment) {
+            //     throw new Error("Failed to save FRAI assessment");
+            // }
 
             dispatch(setLoading(false));
             return {

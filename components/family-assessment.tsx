@@ -11,6 +11,7 @@ import {useToast} from "@/components/ui/use-toast"
 import {MainParentInfo} from "./main-parent-info-form"
 import {SupportingParentInfo} from "./supporting-parent-info-form"
 import {Button} from "./ui/button"
+import { useRouter } from "next/navigation"
 import {MainParentAssessment} from "./main-parent-assessment"
 import {SupportingParentAssessment} from "./supporting-parent-assessment"
 import {ExternalInfluenceAssessment} from "./external-assessment";
@@ -18,7 +19,6 @@ import {Switch} from "@/components/ui/switch";
 import {FormField} from "@/components/ui/form-field";
 import {ChildInfoForm} from "./child-info-form"
 import {ChildAssessment} from "./child-assessment"
-import {useRouter} from "next/navigation";
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "./ui/dialog"
 import { useSelector, useDispatch } from "react-redux"
 import {
@@ -27,7 +27,7 @@ import {
     updateExternalInfluenceAssessment,
     AssessmentItem,
     resetAssessment,
-    startNewAssessment
+    startNewAssessment, updateSupportingParentAssessment, updateChildAssessment
 } from "@/lib/slices/assessmentSlice"
 import {
     setFamilyId,
@@ -75,6 +75,8 @@ interface AssessmentStatus {
         info: boolean
         assessment: boolean
     }
+    supportingParent: boolean
+    child: boolean
     externalInfluence: boolean
 
 }
@@ -86,6 +88,8 @@ interface FamilyAssessment {
     supportingParents: ParentInfo[]
     children: ChildInfo[]
     mainParentAssessment: AssessmentItem[]
+    supportingParentAssessment: AssessmentItem[]
+    childAssessment: AssessmentItem[]
     externalInfluenceAssessment: AssessmentItem[]
     status: "DRAFT" | "IN PROGRESS" | "DONE"
     assessorHv: string
@@ -130,6 +134,8 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
             info: false,
             assessment: false,
         },
+        supportingParent: false,
+        child: false,
         externalInfluence: false,
     })
 
@@ -157,9 +163,19 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
             return false
         }
 
+        // Supporting parent assessments are only required if there are supporting parents
+        if (supportingParentsInfo.length > 0 && !assessmentStatus.supportingParent) {
+            return false;
+        }
+
+        // Child assessments are only required if there are children
+        if (childrenInfo.length > 0 && !assessmentStatus.child) {
+            return false;
+        }
+
         // If we reach here, all required assessments are complete
         return true
-    }, [assessmentStatus])
+    }, [assessmentStatus, supportingParentsInfo.length, childrenInfo.length])
 
     // Handlers for form submissions and actions
     const handleMainParentInfoSubmit = (data: Omit<ParentInfo, "id">) => {
@@ -211,6 +227,25 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         setMainParentAssessmentOpen(false)
     }
 
+    const handleSupportingParentAssessmentComplete = (items: AssessmentItem[]) => {
+        dispatch(updateSupportingParentAssessment(items));
+        setAssessmentStatus((prev) => ({
+            ...prev,
+            supportingParent: true
+        }));
+        setSupportingParentAssessmentOpen(false);
+    }
+
+    const handleChildAssessmentComplete = (items: AssessmentItem[]) => {
+        dispatch(updateChildAssessment(items));
+        setAssessmentStatus((prev) => ({
+            ...prev,
+            child: true
+        }));
+        setChildAssessmentOpen(false);
+    }
+
+
     const handleExternalInfluenceComplete = (items: AssessmentItem[]) => {
         dispatch(updateExternalInfluenceAssessment(items))
         setAssessmentStatus((prev) => ({
@@ -223,7 +258,6 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
     useEffect(() => {
         // Case 1: Different family ID (new family)
         if (prevFamilyIdRef.current && prevFamilyIdRef.current !== familyId) {
-            console.log("New family detected - resetting assessment state");
             dispatch(resetAssessment());
             dispatch(startNewAssessment({ familyId }));
             setAssessmentStatus({
@@ -231,6 +265,8 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                     info: false,
                     assessment: false,
                 },
+                supportingParent: false,
+                child: false,
                 externalInfluence: false,
             });
         }
@@ -249,6 +285,8 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                     info: false,
                     assessment: false,
                 },
+                supportingParent: false,
+                child: false,
                 externalInfluence: false,
             });
         }
@@ -260,6 +298,14 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                 assessmentId,
                 familyId: assessmentData.familyId,
                 mainParentAssessment: assessmentData.mainParentAssessment.map(item => ({
+                    id: item.id,
+                    level: item.level as AssessmentLevel
+                })),
+                supportingParentAssessment: assessmentData.supportingParentAssessment?.map(item => ({
+                    id: item.id,
+                    level: item.level as AssessmentLevel
+                })),
+                childAssessment: assessmentData.childAssessment?.map(item => ({
                     id: item.id,
                     level: item.level as AssessmentLevel
                 })),
@@ -277,6 +323,8 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
             // Mark all sections as completed in view mode
             setAssessmentStatus({
                 mainParent: { info: true, assessment: true },
+                supportingParent: true,
+                child: true,
                 externalInfluence: true,
             });
         }
@@ -291,9 +339,18 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         prevAssessmentIdRef.current = assessmentId;
     }, [familyId, assessmentId, mode, dispatch, assessmentData]);
 
+    // Get all existing assessments for this family from Redux store
+    const existingAssessments = useSelector((state: RootState) =>
+        state.family.assessments.filter(a => a.familyId === familyId)
+    );
+
 
     const handleFinalize = async () => {
-        const assessmentId = Date.now().toString();
+        // Calculate the next assessment number for this family
+        const nextAssessmentNumber = existingAssessments.length + 1;
+
+        // Create the new assessment ID in the format familyId_assessmentNumber
+        const assessmentId = `${familyId}_${nextAssessmentNumber}`;
         const currentTime = new Date().toISOString();
 
         try {
@@ -309,6 +366,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                 return;
             }
 
+            // Assessment number is already determined above
             const familyAssessment: FamilyAssessment = {
                 id: assessmentId,
                 familyId,
@@ -316,6 +374,8 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                 supportingParents: supportingParentsInfo,
                 children: childrenInfo,
                 mainParentAssessment: currentAssessment.mainParentAssessment,
+                supportingParentAssessment: currentAssessment.supportingParentAssessment,
+                childAssessment: currentAssessment.childAssessment,
                 externalInfluenceAssessment: currentAssessment.externalInfluenceAssessment,
                 status: "DONE",
                 assessorHv: "Current User",
@@ -336,7 +396,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
             dispatch(resetAssessment())
 
             setTimeout(() => {
-                router.push(`/families/${familyId}`);
+                router.push(`/families/${familyId}/assessment/${nextAssessmentNumber}`);
             }, 2000);
         }
         catch (error) {
@@ -880,8 +940,8 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                             ? supportingParentsInfo.find((p) => p.id === selectedSupportingParentId)?.firstName || ""
                             : ""
                     }
-                    onComplete={() => {/* No action needed */}}
-                    assessmentType={"supportingParent"}
+                    onComplete={handleSupportingParentAssessmentComplete}
+                    assessmentType="supportingParent"
                 />
                 <ExternalInfluenceAssessment
                     open={externalInfluenceAssessmentOpen}
@@ -902,8 +962,8 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                     open={childAssessmentOpen}
                     onClose={() => setChildAssessmentOpen(false)}
                     childName={selectedChildId ? childrenInfo.find((c) => c.id === selectedChildId)?.firstName || "" : ""}
-                    onComplete={() => {/* No action needed */}}
-                    assessmentType={"child"}
+                    onComplete={handleChildAssessmentComplete}
+                    assessmentType="child"
                 />
                 <div className="h-16" />
             </div>

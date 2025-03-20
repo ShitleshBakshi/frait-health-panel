@@ -51,7 +51,7 @@ const printStyles = `
 
 interface FRATReportProps {
     assessmentId: string;
-    familyId: string;
+    familyId: number;
 }
 
 // Assessment item types for the different sections
@@ -120,6 +120,7 @@ export default function FRATReport({ assessmentId, familyId }: FRATReportProps) 
     const assessment = useSelector((state: RootState) =>
         state.family.assessments.find(a => a.id === assessmentId)
     ) as FamilyAssessment | undefined;
+
 
     const scores = useSelector((state: RootState) => calculateCategoryScores(state));
     const overallScore = calculateOverallScore(scores);
