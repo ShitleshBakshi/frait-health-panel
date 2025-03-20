@@ -1,23 +1,18 @@
-from datetime import date
 
 import strawberry
-from fastapi import Depends
 from strawberry.types import Info
+
 from frait_health_backend.db.dao.frat_assessment_dao import FratAssessmentDAO
 from frait_health_backend.web.gql.frat_assessment_details.schema import (
-    FratAssessmentDTO,
     FratAssessmentInput,
 )
-from frait_health_backend.web.gql.context import Context
 
 
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     async def create_frat_assessment(
-        self,
-        frat_assessment_input: FratAssessmentInput,
-        info: Info
+        self, frat_assessment_input: FratAssessmentInput, info: Info,
     ) -> bool:
         """
         Create a new family details entry.
@@ -28,6 +23,7 @@ class Mutation:
         dao = FratAssessmentDAO(info.context.db_connection)
         await dao.create_frat_assessment(
             id=frat_assessment_input.id,
+            assessmentid=frat_assessment_input.assessmentid,
             assessment_1=frat_assessment_input.assessment_1,
             assessment_2=frat_assessment_input.assessment_2,
             assessment_3=frat_assessment_input.assessment_3,
@@ -64,6 +60,5 @@ class Mutation:
             assessment_34=frat_assessment_input.assessment_34,
             assessment_35=frat_assessment_input.assessment_35,
             assessment_36=frat_assessment_input.assessment_36,
-
         )
         return True

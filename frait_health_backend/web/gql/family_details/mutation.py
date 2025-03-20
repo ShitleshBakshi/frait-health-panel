@@ -1,23 +1,18 @@
-from datetime import date
 
 import strawberry
-from fastapi import Depends
 from strawberry.types import Info
+
 from frait_health_backend.db.dao.family_details_dao import FamilyDetailsDAO
 from frait_health_backend.web.gql.family_details.schema import (
-    FamilyDetailsModelDTO,
     FamilyDetailsInput,
 )
-from frait_health_backend.web.gql.context import Context
 
 
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     async def create_family_details(
-        self,
-        family_details_input: FamilyDetailsInput,
-        info: Info
+        self, family_details_input: FamilyDetailsInput, info: Info,
     ) -> bool:
         """
         Create a new family details entry.

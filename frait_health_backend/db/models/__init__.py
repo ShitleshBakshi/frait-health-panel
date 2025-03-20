@@ -1,4 +1,5 @@
 """frait_health_backend models."""
+
 import pkgutil
 from pathlib import Path
 

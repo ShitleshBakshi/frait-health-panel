@@ -1,8 +1,11 @@
 """Query resolvers for initial family types."""
+
 from typing import List
+
 import strawberry
-from frait_health_backend.db.dao.frai_assessment_dao import FraiAssessmentDAO
 from strawberry.types import Info
+
+from frait_health_backend.db.dao.frai_assessment_dao import FraiAssessmentDAO
 
 from .schema import FraiAssessmentModelDTO
 
@@ -26,7 +29,9 @@ class Query:
         """
         try:
             dao = FraiAssessmentDAO(info.context.db_connection)
-            frai_assessment = await dao.get_all_frai_assessment(limit=limit, offset=offset)
+            frai_assessment = await dao.get_all_frai_assessment(
+                limit=limit, offset=offset,
+            )
             return frai_assessment
         except Exception as e:
             print(f"Error fetching frai assessment: {e}")

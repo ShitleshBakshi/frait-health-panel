@@ -27,7 +27,9 @@ def upgrade() -> None:
         sa.Column("main_parent_dob", sa.String(length=200), nullable=False),
         sa.Column("main_parent_gender", sa.String(length=100), nullable=False),
         sa.Column(
-            "main_parent_relation_to_child", sa.String(length=100), nullable=False,
+            "main_parent_relation_to_child",
+            sa.String(length=100),
+            nullable=False,
         ),
         sa.Column("main_parent_education_level", sa.String(length=200), nullable=False),
         sa.Column("main_parent_parental_responsibility", sa.Boolean(), nullable=False),
@@ -37,13 +39,19 @@ def upgrade() -> None:
         sa.Column("support_parent_dob", sa.String(length=200), nullable=False),
         sa.Column("support_parent_gender", sa.String(length=100), nullable=False),
         sa.Column(
-            "support_parent_relation_to_child", sa.String(length=100), nullable=False,
+            "support_parent_relation_to_child",
+            sa.String(length=100),
+            nullable=False,
         ),
         sa.Column(
-            "support_parent_education_level", sa.String(length=200), nullable=False,
+            "support_parent_education_level",
+            sa.String(length=200),
+            nullable=False,
         ),
         sa.Column(
-            "support_parent_parental_responsibility", sa.Boolean(), nullable=False,
+            "support_parent_parental_responsibility",
+            sa.Boolean(),
+            nullable=False,
         ),
         sa.Column("support_parent_information_provider", sa.Boolean(), nullable=False),
         sa.Column("child_first_name", sa.String(length=200), nullable=False),
@@ -52,10 +60,14 @@ def upgrade() -> None:
         sa.Column("child_dob", sa.String(length=200), nullable=False),
         sa.Column("child_support_parent", sa.Boolean(), nullable=False),
         sa.Column(
-            "child_support_parent_first_name", sa.String(length=200), nullable=False,
+            "child_support_parent_first_name",
+            sa.String(length=200),
+            nullable=False,
         ),
         sa.Column(
-            "child_support_parent_last_name", sa.String(length=200), nullable=False,
+            "child_support_parent_last_name",
+            sa.String(length=200),
+            nullable=False,
         ),
         sa.ForeignKeyConstraint(
             ["id"],

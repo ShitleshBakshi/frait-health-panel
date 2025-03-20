@@ -7,6 +7,8 @@ from frait_health_backend.log import configure_logging
 from frait_health_backend.web.api.router import api_router
 from frait_health_backend.web.gql.router import gql_router
 from frait_health_backend.web.lifespan import lifespan_setup
+from starlette.middleware.cors import CORSMiddleware
+
 
 
 def get_app() -> FastAPI:
@@ -26,6 +28,15 @@ def get_app() -> FastAPI:
         redoc_url="/api/redoc",
         openapi_url="/api/openapi.json",
         default_response_class=UJSONResponse,
+    )
+
+    # Add CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     # Main router for the API.

@@ -38,11 +38,17 @@ def downgrade() -> None:
         "initial_family_model",
         sa.Column("id", sa.INTEGER(), autoincrement=True, nullable=False),
         sa.Column(
-            "family_name", sa.VARCHAR(length=200), autoincrement=False, nullable=False,
+            "family_name",
+            sa.VARCHAR(length=200),
+            autoincrement=False,
+            nullable=False,
         ),
         sa.Column("child_dob", sa.DATE(), autoincrement=False, nullable=False),
         sa.Column(
-            "nhs_number", sa.VARCHAR(length=200), autoincrement=False, nullable=False,
+            "nhs_number",
+            sa.VARCHAR(length=200),
+            autoincrement=False,
+            nullable=False,
         ),
         sa.PrimaryKeyConstraint("id", name="initial_family_model_pkey"),
     )

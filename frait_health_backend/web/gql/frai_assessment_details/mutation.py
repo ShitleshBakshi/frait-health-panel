@@ -1,9 +1,8 @@
-from datetime import date
 import strawberry
-from typing import Optional
+from strawberry.types import Info
 
 from frait_health_backend.db.dao.frai_assessment_dao import FraiAssessmentDAO
-from strawberry.types import Info
+
 from .schema import FraiAssessmentInput
 
 
@@ -11,9 +10,7 @@ from .schema import FraiAssessmentInput
 class Mutation:
     @strawberry.mutation
     async def create_initial_frai_assessment(
-        self,
-        frai_input: FraiAssessmentInput,
-        info: Info
+        self, frai_input: FraiAssessmentInput, info: Info,
     ) -> bool:
         """
         Create initial family record.

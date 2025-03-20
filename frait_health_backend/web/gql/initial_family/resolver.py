@@ -1,11 +1,12 @@
 """GraphQL resolvers for initial family module."""
-from datetime import date
+
 from typing import List
 
 from strawberry.types import Info
 
 from frait_health_backend.db.dao.initial_family_dao import InitialFamilyDAO
-from .schema import InitialFamilyModelDTO, InitialFamilyInput
+
+from .schema import InitialFamilyInput, InitialFamilyModelDTO
 
 
 async def resolve_create_initial_family(

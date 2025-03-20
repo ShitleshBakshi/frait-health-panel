@@ -1,5 +1,4 @@
-from typing import List, Optional
-from datetime import date
+from typing import List
 
 from fastapi import Depends
 from sqlalchemy import select
@@ -7,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from frait_health_backend.db.dependencies import get_db_session
 from frait_health_backend.db.models.frai_assessment_model import FraiAssessmentModel
+
 
 class FraiAssessmentDAO:
     """Class for accessing Frai Assessment table."""

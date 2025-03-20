@@ -1,4 +1,3 @@
-from datetime import date
 import strawberry
 
 
@@ -13,6 +12,7 @@ class FraiAssessmentModelDTO:
     family_support: str
     socio_economic: str
     overall_score: str
+
 
 @strawberry.input
 class FraiAssessmentInput:

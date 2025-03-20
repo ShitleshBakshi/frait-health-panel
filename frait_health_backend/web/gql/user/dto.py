@@ -1,10 +1,12 @@
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 import strawberry
+
 
 @strawberry.type
 class UserContextDTO:
     """DTO for user context data that is exposed to GraphQL."""
-    
+
     id: Optional[int] = None
     email: Optional[str] = None
     role: Optional[str] = None

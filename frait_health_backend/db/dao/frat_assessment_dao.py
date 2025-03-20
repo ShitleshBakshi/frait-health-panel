@@ -17,6 +17,7 @@ class FratAssessmentDAO:
     async def create_frat_assessment(
         self,
         id: int,
+        assessmentid: str,
         assessment_1: str,
         assessment_2: str,
         assessment_3: str,
@@ -52,8 +53,8 @@ class FratAssessmentDAO:
         assessment_33: str,
         assessment_34: str,
         assessment_35: str,
-        assessment_36: str
-         ) -> None:
+        assessment_36: str,
+    ) -> None:
         """
         Add single frat assessment details record to session.
 
@@ -63,6 +64,7 @@ class FratAssessmentDAO:
         self.session.add(
             FratAssessmentModel(
                 id=id,
+                assessmentid=assessmentid,
                 assessment_1=assessment_1,
                 assessment_2=assessment_2,
                 assessment_3=assessment_3,
@@ -98,8 +100,7 @@ class FratAssessmentDAO:
                 assessment_33=assessment_33,
                 assessment_34=assessment_34,
                 assessment_35=assessment_35,
-                assessment_36=assessment_36
-
+                assessment_36=assessment_36,
             ),
         )
         await self.session.flush()
@@ -116,7 +117,9 @@ class FratAssessmentDAO:
 
         return list(raw_frat_assessment.scalars().fetchall())
 
-    async def get_frat_assessment_details(self, family_id: int) -> Optional[FratAssessmentModel]:
+    async def get_frat_assessment_details(
+        self, family_id: int,
+    ) -> Optional[FratAssessmentModel]:
         """
         Get specific family details.
 

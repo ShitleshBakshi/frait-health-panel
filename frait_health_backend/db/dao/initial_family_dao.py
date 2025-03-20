@@ -1,5 +1,4 @@
-from typing import List, Optional
-from datetime import date
+from typing import List
 
 from fastapi import Depends
 from sqlalchemy import select

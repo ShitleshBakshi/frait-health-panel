@@ -1,4 +1,3 @@
-from datetime import date
 import strawberry
 
 
@@ -10,6 +9,7 @@ class InitialFamilyModelDTO:
     family_name: str
     child_dob: str
     nhs_number: str
+
 
 @strawberry.input
 class InitialFamilyInput:

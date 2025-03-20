@@ -1,13 +1,14 @@
 """Query resolvers for frat assessment types."""
+
 from typing import List
 
 import strawberry
-from fastapi import Depends
+from strawberry.types import Info
 
 from frait_health_backend.db.dao.frat_assessment_dao import FratAssessmentDAO
-from frait_health_backend.web.gql.frat_assessment_details.schema import FratAssessmentDTO
-from frait_health_backend.web.gql.context import Context
-from strawberry.types import Info
+from frait_health_backend.web.gql.frat_assessment_details.schema import (
+    FratAssessmentDTO,
+)
 
 
 @strawberry.type
@@ -27,7 +28,9 @@ class Query:
         """
         try:
             dao = FratAssessmentDAO(session=info.context.db_session)
-            frat_assessment_models = await dao.get_all_frat_assessment_details(limit=limit, offset=offset)
+            frat_assessment_models = await dao.get_all_frat_assessment_details(
+                limit=limit, offset=offset,
+            )
             return frat_assessment_models
         except Exception as e:
             print(f"Error fetching frat assessment: {e}")
@@ -48,7 +51,9 @@ class Query:
         """
         try:
             dao = FratAssessmentDAO(session=info.context.db_session)
-            frat_assessment_details = await dao.get_frat_assessment_details(family_id=family_id)
+            frat_assessment_details = await dao.get_frat_assessment_details(
+                family_id=family_id,
+            )
             return frat_assessment_details
         except Exception as e:
             print(f"Error fetching frat assessment: {e}")

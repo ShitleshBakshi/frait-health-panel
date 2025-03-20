@@ -1,5 +1,6 @@
+
 import strawberry
-from datetime import date
+
 
 @strawberry.type
 class FamilyDetailsModelDTO:
@@ -29,6 +30,7 @@ class FamilyDetailsModelDTO:
     child_support_parent: bool
     child_support_parent_first_name: str
     child_support_parent_last_name: str
+
 
 @strawberry.input
 class FamilyDetailsInput:

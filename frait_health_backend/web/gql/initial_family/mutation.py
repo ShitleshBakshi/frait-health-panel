@@ -1,20 +1,16 @@
-from datetime import date
 import strawberry
-from typing import Optional
+from strawberry.types import Info
 
 from frait_health_backend.db.dao.initial_family_dao import InitialFamilyDAO
-from strawberry.types import Info
+
 from .schema import InitialFamilyInput
-from .resolver import resolve_create_initial_family
 
 
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     async def create_initial_family(
-        self,
-        input: InitialFamilyInput,
-        info: Info
+        self, input: InitialFamilyInput, info: Info,
     ) -> bool:
         """
         Create initial family record.

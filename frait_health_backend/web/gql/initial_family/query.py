@@ -1,11 +1,13 @@
 """Query resolvers for initial family types."""
+
 from typing import List
+
 import strawberry
-from frait_health_backend.db.dao.initial_family_dao import InitialFamilyDAO
 from strawberry.types import Info
 
+from frait_health_backend.db.dao.initial_family_dao import InitialFamilyDAO
+
 from .schema import InitialFamilyModelDTO
-from .resolver import resolve_get_initial_families
 
 
 @strawberry.type

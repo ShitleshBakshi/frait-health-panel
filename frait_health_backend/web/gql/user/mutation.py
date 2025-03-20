@@ -3,11 +3,9 @@ from datetime import datetime, timedelta
 import jwt
 import strawberry
 from strawberry.types import Info
-from typing import Any
 
 from frait_health_backend.db.dao.user_dao import UserDAO
 from frait_health_backend.settings import Settings
-from frait_health_backend.web.gql.user.dto import UserContextDTO
 from frait_health_backend.web.gql.user.schema import AuthResponse, UserModelDTO
 
 

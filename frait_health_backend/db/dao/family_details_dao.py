@@ -39,8 +39,7 @@ class FamilyDetailsDAO:
         child_dob: str,
         child_support_parent: bool,
         child_support_parent_first_name: str,
-        child_support_parent_last_name: str
-
+        child_support_parent_last_name: str,
     ) -> None:
         """
         Add single family details record to session.
@@ -79,7 +78,7 @@ class FamilyDetailsDAO:
                 child_dob=child_dob,
                 child_support_parent=child_support_parent,
                 child_support_parent_first_name=child_support_parent_first_name,
-                child_support_parent_last_name=child_support_parent_last_name
+                child_support_parent_last_name=child_support_parent_last_name,
             ),
         )
         await self.session.flush()

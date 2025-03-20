@@ -1,13 +1,12 @@
 """Query resolvers for family details types."""
+
 from typing import List
 
 import strawberry
-from fastapi import Depends
+from strawberry.types import Info
 
 from frait_health_backend.db.dao.family_details_dao import FamilyDetailsDAO
 from frait_health_backend.web.gql.family_details.schema import FamilyDetailsModelDTO
-from frait_health_backend.web.gql.context import Context
-from strawberry.types import Info
 
 
 @strawberry.type
@@ -27,7 +26,9 @@ class Query:
         """
         try:
             dao = FamilyDetailsDAO(session=info.context.db_session)
-            family_details_models = await dao.get_all_family_details(limit=limit, offset=offset)
+            family_details_models = await dao.get_all_family_details(
+                limit=limit, offset=offset,
+            )
             return family_details_models
         except Exception as e:
             print(f"Error fetching family details: {e}")
