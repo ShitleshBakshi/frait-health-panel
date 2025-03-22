@@ -10,7 +10,9 @@ from .schema import FraiAssessmentInput
 class Mutation:
     @strawberry.mutation
     async def create_initial_frai_assessment(
-        self, frai_input: FraiAssessmentInput, info: Info,
+        self,
+        frai_input: FraiAssessmentInput,
+        info: Info,
     ) -> bool:
         """
         Create initial family record.
@@ -21,6 +23,7 @@ class Mutation:
         """
         dao = FraiAssessmentDAO(info.context.db_connection)
         await dao.create_frai_assessment(
+            id=frai_input.id,
             responsive_parenting=frai_input.responsive_parenting,
             family_health=frai_input.family_health,
             family_engagement=frai_input.family_engagement,

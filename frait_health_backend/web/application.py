@@ -2,13 +2,12 @@ from importlib import metadata
 
 from fastapi import FastAPI
 from fastapi.responses import UJSONResponse
+from starlette.middleware.cors import CORSMiddleware
 
 from frait_health_backend.log import configure_logging
 from frait_health_backend.web.api.router import api_router
 from frait_health_backend.web.gql.router import gql_router
 from frait_health_backend.web.lifespan import lifespan_setup
-from starlette.middleware.cors import CORSMiddleware
-
 
 
 def get_app() -> FastAPI:

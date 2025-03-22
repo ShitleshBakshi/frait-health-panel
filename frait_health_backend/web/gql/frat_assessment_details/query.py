@@ -29,7 +29,8 @@ class Query:
         try:
             dao = FratAssessmentDAO(session=info.context.db_session)
             frat_assessment_models = await dao.get_all_frat_assessment_details(
-                limit=limit, offset=offset,
+                limit=limit,
+                offset=offset,
             )
             return frat_assessment_models
         except Exception as e:

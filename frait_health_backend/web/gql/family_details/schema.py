@@ -1,6 +1,36 @@
-
 import strawberry
+from typing import List, Optional
 
+
+@strawberry.type
+class SupportingParentDTO:
+    """DTO for supporting parent model."""
+
+    id: int
+    first_name: str
+    last_name: str
+    dob: str
+    gender: str
+    relation_to_child: str
+    education_level: str
+    parental_responsibility: bool
+    information_provider: bool
+
+
+
+
+@strawberry.type
+class ChildDTO:
+    """DTO for child model."""
+
+    id: int
+    first_name: str
+    last_name: str
+    gender: str
+    dob: str
+    support_parent: bool
+    support_parent_first_name: str
+    support_parent_last_name: str
 
 @strawberry.type
 class FamilyDetailsModelDTO:
@@ -15,21 +45,35 @@ class FamilyDetailsModelDTO:
     main_parent_education_level: str
     main_parent_parental_responsibility: bool
     main_parent_information_provider: bool
+    supporting_parents: List[SupportingParentDTO]
+    children: List[ChildDTO]
+
+
+@strawberry.input
+class SupportingParentInput:
+    """Input for supporting parent creation."""
+
+    first_name: str
+    last_name: str
+    dob: str
+    gender: str
+    relation_to_child: str
+    education_level: str
+    parental_responsibility: bool
+    information_provider: bool
+
+
+@strawberry.input
+class ChildInput:
+    """Input for child creation."""
+
+    first_name: str
+    last_name: str
+    gender: str
+    dob: str
+    support_parent: bool
     support_parent_first_name: str
     support_parent_last_name: str
-    support_parent_dob: str
-    support_parent_gender: str
-    support_parent_relation_to_child: str
-    support_parent_education_level: str
-    support_parent_parental_responsibility: bool
-    support_parent_information_provider: bool
-    child_first_name: str
-    child_last_name: str
-    child_gender: str
-    child_dob: str
-    child_support_parent: bool
-    child_support_parent_first_name: str
-    child_support_parent_last_name: str
 
 
 @strawberry.input
@@ -45,18 +89,5 @@ class FamilyDetailsInput:
     main_parent_education_level: str
     main_parent_parental_responsibility: bool
     main_parent_information_provider: bool
-    support_parent_first_name: str
-    support_parent_last_name: str
-    support_parent_dob: str
-    support_parent_gender: str
-    support_parent_relation_to_child: str
-    support_parent_education_level: str
-    support_parent_parental_responsibility: bool
-    support_parent_information_provider: bool
-    child_first_name: str
-    child_last_name: str
-    child_gender: str
-    child_dob: str
-    child_support_parent: bool
-    child_support_parent_first_name: str
-    child_support_parent_last_name: str
+    supporting_parents: List[SupportingParentInput] = strawberry.field(default_factory=list)
+    children: List[ChildInput] = strawberry.field(default_factory=list)

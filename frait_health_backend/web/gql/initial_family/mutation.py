@@ -10,7 +10,9 @@ from .schema import InitialFamilyInput
 class Mutation:
     @strawberry.mutation
     async def create_initial_family(
-        self, input: InitialFamilyInput, info: Info,
+        self,
+        input: InitialFamilyInput,
+        info: Info,
     ) -> bool:
         """
         Create initial family record.

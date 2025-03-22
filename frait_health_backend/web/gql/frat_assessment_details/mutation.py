@@ -1,4 +1,3 @@
-
 import strawberry
 from strawberry.types import Info
 
@@ -12,7 +11,9 @@ from frait_health_backend.web.gql.frat_assessment_details.schema import (
 class Mutation:
     @strawberry.mutation
     async def create_frat_assessment(
-        self, frat_assessment_input: FratAssessmentInput, info: Info,
+        self,
+        frat_assessment_input: FratAssessmentInput,
+        info: Info,
     ) -> bool:
         """
         Create a new family details entry.

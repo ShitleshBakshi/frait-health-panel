@@ -16,6 +16,7 @@ class FraiAssessmentDAO:
 
     async def create_frai_assessment(
         self,
+        id: int,
         responsive_parenting: str,
         family_health: str,
         family_engagement: str,
@@ -30,6 +31,7 @@ class FraiAssessmentDAO:
         """
         self.session.add(
             FraiAssessmentModel(
+                id=id,
                 responsive_parenting=responsive_parenting,
                 family_health=family_health,
                 family_engagement=family_engagement,

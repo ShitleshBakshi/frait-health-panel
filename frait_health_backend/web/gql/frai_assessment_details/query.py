@@ -30,7 +30,8 @@ class Query:
         try:
             dao = FraiAssessmentDAO(info.context.db_connection)
             frai_assessment = await dao.get_all_frai_assessment(
-                limit=limit, offset=offset,
+                limit=limit,
+                offset=offset,
             )
             return frai_assessment
         except Exception as e:

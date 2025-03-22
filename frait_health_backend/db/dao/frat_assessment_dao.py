@@ -118,7 +118,8 @@ class FratAssessmentDAO:
         return list(raw_frat_assessment.scalars().fetchall())
 
     async def get_frat_assessment_details(
-        self, family_id: int,
+        self,
+        family_id: int,
     ) -> Optional[FratAssessmentModel]:
         """
         Get specific family details.

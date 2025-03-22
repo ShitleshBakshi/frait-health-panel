@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # Enable uvicorn reloading
     reload: bool = False
 
-    #CORS Settings
+    # CORS Settings
     cors_allow_origins: list[str] = ["http://localhost:3000"]
 
     # Current environment
