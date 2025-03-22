@@ -39,35 +39,24 @@ import {
     addChild,
     removeChild,
     setSaving,
-    setError
+    setError,
+    resetSupportingParents,
+    resetChildren,
+    setSupportingParents,
+    setChildren,
+    ParentInfo,
+    ChildInfo
 } from "@/lib/slices/familyDetailsSlice";
-import { saveFamilyDetails } from "@/lib/thunks/familyDetailsThunks";
-// import type { ParentInfo } from "@/lib/slices/familyDetailsSlice";
+import { saveFamilyDetails, fetchFamilyDetailsFromBackend } from "@/lib/thunks/familyDetailsThunks";
 import { saveAssessmentToBackend } from "@/lib/thunks/assessment-thunks";
-import { addFamilyAssessment } from "@/lib/slices/familySlice"
+import {addFamilyAssessment, type Family} from "@/lib/slices/familySlice"
 import type {AppDispatch, RootState} from "@/lib/store"
 import type { AssessmentLevel } from "@/type/assessment"
 
 interface FamilyAssessmentProps {
     familyId: number
-    assessmentId?: string
+    assessmentId?: number
     mode?: "edit" | "view"
-}
-
-interface ParentInfo {
-    id: string
-    firstName: string
-    lastName: string
-    dateOfBirth: string
-}
-
-interface ChildInfo {
-    id: string
-    firstName: string
-    lastName: string
-    dateOfBirth: string
-    gender: string
-    supportingParentId?: string
 }
 
 interface AssessmentStatus {
@@ -104,11 +93,18 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
     const { toast } = useToast()
 
     const prevFamilyIdRef = useRef<number | undefined | null>(null);
-    const prevAssessmentIdRef = useRef<string | undefined | null>(null);
+    const prevAssessmentIdRef = useRef<number | undefined | null>(null);
 
-    const family = useSelector((state: RootState) =>
-        state.family.families.find(f => f.id === familyId)
-    );
+    // const [selectedFamily, setSelectedFamily] = useState<Family | null>(null)
+    const family = useSelector((state: RootState) => {
+        return state.family.families.find(f => {
+            // Convert both IDs to strings for comparison
+            const storeId = typeof f.id === 'string' ? f.id : String(f.id);
+            const currentFamilyId = typeof familyId === 'string' ? familyId : String(familyId);
+
+            return storeId === currentFamilyId;
+        });
+    });
 
     const [mainParentFormOpen, setMainParentFormOpen] = useState(false)
     const [mainParentAssessmentOpen, setMainParentAssessmentOpen] = useState(false)
@@ -143,7 +139,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
     const [fraiDialogOpen, setFraiDialogOpen] = useState(false)
 
     const assessmentData = useSelector((state: RootState) =>
-        assessmentId ? state.family.assessments.find(a => a.id === assessmentId) : null
+        assessmentId ? state.family.assessments.find(a => a.id === String(assessmentId)) : null
     )
 
     const currentAssessment = useSelector((state: RootState) => state.assessment.currentAssessment)
@@ -178,8 +174,28 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
     }, [assessmentStatus, supportingParentsInfo.length, childrenInfo.length])
 
     // Handlers for form submissions and actions
-    const handleMainParentInfoSubmit = (data: Omit<ParentInfo, "id">) => {
-        setMainParentInfo({ ...data, id: Date.now().toString() })
+    const handleMainParentInfoSubmit = (data: {
+        firstName: string;
+        lastName: string;
+        dateOfBirth: string;
+        gender?: string;
+        relationToChild?: string;
+        educationLevel?: string;
+        parentalResponsibility?: boolean;
+        informationProvider?: boolean;
+    }) => {
+        const newMainParent: ParentInfo = {
+            id: Date.now().toString(),
+            firstName: data.firstName,
+            lastName: data.lastName,
+            dateOfBirth: data.dateOfBirth,
+            gender: data.gender || "",
+            relationToChild: data.relationToChild || "",
+            educationLevel: data.educationLevel || "",
+            parentalResponsibility: data.parentalResponsibility || false,
+            informationProvider: data.informationProvider || false
+        };
+        setMainParentInfo(newMainParent)
         setMainParentFormOpen(false)
         setAssessmentStatus((prev) => ({
             ...prev,
@@ -187,8 +203,27 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         }))
     }
 
-    const handleSupportingParentInfoSubmit = (data: Omit<ParentInfo, "id">) => {
-        const newSupportingParent = { ...data, id: Date.now().toString() }
+    const handleSupportingParentInfoSubmit = (data: {
+        firstName: string;
+        lastName: string;
+        dateOfBirth: string;
+        gender?: string;
+        relationToChild?: string;
+        educationLevel?: string;
+        parentalResponsibility?: boolean;
+        informationProvider?: boolean;
+    }) =>{
+    const newSupportingParent: ParentInfo = {
+        id: Date.now().toString(),
+        firstName: data.firstName,
+        lastName: data.lastName,
+        dateOfBirth: data.dateOfBirth,
+        gender: data.gender || "",
+        relationToChild: data.relationToChild || "",
+        educationLevel: data.educationLevel || "",
+        parentalResponsibility: data.parentalResponsibility || false,
+        informationProvider: data.informationProvider || false
+    };
         setSupportingParentsInfo((prev) => [...prev, newSupportingParent])
         setSupportingParentFormOpen(false)
     }
@@ -254,7 +289,45 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         }))
         setExternalInfluenceAssessmentOpen(false)
     }
+    // Function to save family details to the backend
+    const saveFamilyDetailsBeforeFinalizing = async () => {
+        if (!mainParentInfo) {
+            toast({
+                title: "Error",
+                description: "Main parent information is required",
+                variant: "destructive"
+            });
+            return false;
+        }
 
+        try {
+            // Save all parents and children to backend
+            const result = await dispatch(saveFamilyDetails({
+                familyId: familyId,
+                mainParentInfo,
+                supportingParentsInfo: supportingParentsInfo,
+                childrenInfo: childrenInfo
+            })).unwrap();
+
+            if (!result.success) {
+                toast({
+                    title: "Error",
+                    description: "Failed to save family details",
+                    variant: "destructive"
+                });
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to save family details",
+                variant: "destructive"
+            });
+            return false;
+        }
+    };
     useEffect(() => {
         // Case 1: Different family ID (new family)
         if (prevFamilyIdRef.current && prevFamilyIdRef.current !== familyId) {
@@ -339,6 +412,40 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         prevAssessmentIdRef.current = assessmentId;
     }, [familyId, assessmentId, mode, dispatch, assessmentData]);
 
+    // Load family details from backend when creating a new assessment
+    useEffect(() => {
+        if (familyId && !assessmentId && mode === "edit") {
+            // Only load family details for new assessments
+            // (for existing ones we're loading from the assessment object)
+            dispatch(fetchFamilyDetailsFromBackend(familyId))
+                .unwrap()
+                .then((data) => {
+                    if (!data) return; // No family details exist yet
+
+                    // If we have family details, populate the component state
+                    if (data.mainParentInfo) {
+                        setMainParentInfo(data.mainParentInfo);
+                        setAssessmentStatus((prev) => ({
+                            ...prev,
+                            mainParent: { ...prev.mainParent, info: true },
+                        }));
+                    }
+
+                    if (data.supportingParentsInfo?.length > 0) {
+                        setSupportingParentsInfo(data.supportingParentsInfo);
+                    }
+
+                    if (data.childrenInfo?.length > 0) {
+                        setChildrenInfo(data.childrenInfo);
+                    }
+                })
+                .catch((error) => {
+                    // If there's no family details yet, we'll just start with empty state
+                    console.log("No existing family details found or error:", error);
+                });
+        }
+    }, [familyId, assessmentId, mode, dispatch]);
+
     // Get all existing assessments for this family from Redux store
     const existingAssessments = useSelector((state: RootState) =>
         state.family.assessments.filter(a => a.familyId === familyId)
@@ -354,8 +461,13 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         const currentTime = new Date().toISOString();
 
         try {
+            // First, save the family details to the backend
+            const familyDetailsSaved = await saveFamilyDetailsBeforeFinalizing();
+            if (!familyDetailsSaved) {
+                return; // Stop if family details couldn't be saved
+            }
             // First, save the assessment data to the backend
-            const saveResult = await dispatch(saveAssessmentToBackend()).unwrap();
+            const saveResult = await dispatch(saveAssessmentToBackend(nextAssessmentNumber)).unwrap();
 
             if (!saveResult.success) {
                 toast({
@@ -396,7 +508,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
             dispatch(resetAssessment())
 
             setTimeout(() => {
-                router.push(`/families/${familyId}/assessment/${nextAssessmentNumber}`);
+                router.push(`/families/${familyId}`);
             }, 2000);
         }
         catch (error) {

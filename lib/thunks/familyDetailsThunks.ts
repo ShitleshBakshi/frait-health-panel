@@ -1,119 +1,172 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { setSaving, setError } from "../slices/familyDetailsSlice";
-import type { RootState } from "../store";
+import {
+        fetchGraphQL,
+        SAVE_FAMILY_DETAILS_MUTATION,
+        GET_FAMILY_DETAILS_QUERY
+} from "@/lib/api";
+import { setSaving,
+    setError,
+    setLastSaved,
+    setFamilyDetails,
+    ParentInfo,
+    ChildInfo } from "../slices/familyDetailsSlice";
 
-// Thunk to save family details to the backend
+/**
+ * Save family details to the backend
+ */
 export const saveFamilyDetails = createAsyncThunk(
-    "familyDetails/saveFamilyDetails",
-    async (_, { getState, dispatch }) => {
+    'familyDetails/saveToBackend',
+    async (
+        {
+            familyId,
+            mainParentInfo,
+            supportingParentsInfo,
+            childrenInfo
+        }: {
+            familyId: number,
+            mainParentInfo: any,
+            supportingParentsInfo?: any[],
+            childrenInfo?: any[]
+        },
+        { dispatch, rejectWithValue }
+    ) => {
         try {
             dispatch(setSaving(true));
 
-            const state = getState() as RootState;
-            const { familyDetails } = state;
+            // Ensure we have arrays for supporting parents and children
+            const supportingParents = supportingParentsInfo || [];
+            const children = childrenInfo || [];
 
-            if (!familyDetails.familyId) {
-                throw new Error("Family ID is required");
-            }
+            // Map main parent fields to backend structure
+            const payload = {
+                id: familyId,
+                mainParentFirstName: mainParentInfo.firstName,
+                mainParentLastName: mainParentInfo.lastName,
+                mainParentDob: mainParentInfo.dateOfBirth,
+                mainParentGender: mainParentInfo.gender || "",
+                mainParentRelationToChild: mainParentInfo.relationToChild || "",
+                mainParentEducationLevel: mainParentInfo.educationLevel || "",
+                mainParentParentalResponsibility: mainParentInfo.parentalResponsibility || false,
+                mainParentInformationProvider: mainParentInfo.informationProvider || false,
 
-            if (!familyDetails.mainParent) {
-                throw new Error("Main parent information is required");
-            }
+                // Map supporting parents to backend structure
+                supportingParents: supportingParents.map(parent => ({
+                    firstName: parent.firstName,
+                    lastName: parent.lastName,
+                    dob: parent.dateOfBirth,
+                    gender: parent.gender || "",
+                    relationToChild: parent.relationToChild || "",
+                    educationLevel: parent.educationLevel || "",
+                    parentalResponsibility: parent.parentalResponsibility || false,
+                    informationProvider: parent.informationProvider || false
+                })),
 
-            // Prepare data for backend in the format it expects
-            const backendData = {
-                id: parseInt(familyDetails.familyId),
-                main_parent_first_name: familyDetails.mainParent.firstName,
-                main_parent_last_name: familyDetails.mainParent.lastName,
-                main_parent_dob: familyDetails.mainParent.dateOfBirth,
-                main_parent_gender: familyDetails.mainParent.gender,
-                main_parent_relation_to_child: familyDetails.mainParent.relationToChild,
-                main_parent_education_level: familyDetails.mainParent.educationLevel,
-                main_parent_parental_responsibility: familyDetails.mainParent.parentalResponsibility,
-                main_parent_information_provider: familyDetails.mainParent.informationProvider,
-
-                // Get first supporting parent or empty defaults
-                support_parent_first_name: familyDetails.supportingParents[0]?.firstName || "",
-                support_parent_last_name: familyDetails.supportingParents[0]?.lastName || "",
-                support_parent_dob: familyDetails.supportingParents[0]?.dateOfBirth || "",
-                support_parent_gender: familyDetails.supportingParents[0]?.gender || "",
-                support_parent_relation_to_child: familyDetails.supportingParents[0]?.relationToChild || "",
-                support_parent_education_level: familyDetails.supportingParents[0]?.educationLevel || "",
-                support_parent_parental_responsibility: familyDetails.supportingParents[0]?.parentalResponsibility || false,
-                support_parent_information_provider: familyDetails.supportingParents[0]?.informationProvider || false,
-
-                // Get first child or empty defaults
-                child_first_name: familyDetails.children[0]?.firstName || "",
-                child_last_name: familyDetails.children[0]?.lastName || "",
-                child_gender: familyDetails.children[0]?.gender || "",
-                child_dob: familyDetails.children[0]?.dateOfBirth || "",
-                child_support_parent: familyDetails.children[0]?.supportParent || false,
-                child_support_parent_first_name: familyDetails.children[0]?.supportParentFirstName || "",
-                child_support_parent_last_name: familyDetails.children[0]?.supportParentLastName || ""
+                // Map children to backend structure
+                children: children.map(child => ({
+                    firstName: child.firstName,
+                    lastName: child.lastName,
+                    gender: child.gender,
+                    dob: child.dateOfBirth,
+                    supportParent: child.supportParent || false,
+                    supportParentFirstName: child.supportParentFirstName || "",
+                    supportParentLastName: child.supportParentLastName || ""
+                }))
             };
 
-            // For a real app, this would be an API call
-            // Example:
-            // const response = await fetch('/api/family-details', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify(backendData)
-            // });
-            //
-            // if (!response.ok) {
-            //     throw new Error('Failed to save family details');
-            // }
-            //
-            // const result = await response.json();
-            // return result;
+            // Execute GraphQL mutation
+            const result = await fetchGraphQL(SAVE_FAMILY_DETAILS_MUTATION, {
+                family_details_input: {...payload,id: +familyId}
+            });
 
-            // For demo, just log the data and simulate a delay
-            console.log("Saving family details:", backendData);
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (!result.createFamilyDetails) {
+                throw new Error("Failed to save family details");
+            }
+
+            const timestamp = new Date().toISOString();
+            if (typeof setLastSaved === 'function') {
+                dispatch(setLastSaved(timestamp));
+            }
 
             dispatch(setSaving(false));
-            dispatch(setError(null));
-
-            return backendData;
+            return {
+                success: true,
+                timestamp
+            };
         } catch (error) {
             dispatch(setSaving(false));
-            dispatch(setError(error instanceof Error ? error.message : "An unknown error occurred"));
-            throw error;
+            dispatch(setError(error instanceof Error ? error.message : "Failed to save family details"));
+            return rejectWithValue(error instanceof Error ? error.message : "Failed to save family details");
         }
     }
 );
 
-// Thunk to fetch family details from the backend
-export const fetchFamilyDetails = createAsyncThunk(
-    "familyDetails/fetchFamilyDetails",
-    async (familyId: string, { dispatch }) => {
+/**
+ * Fetch family details from the backend
+ */
+export const fetchFamilyDetailsFromBackend = createAsyncThunk(
+    'familyDetails/fetchFromBackend',
+    async (familyId: number, { dispatch, rejectWithValue }) => {
         try {
             dispatch(setSaving(true));
 
-            // For a real app, this would be an API call
-            // Example:
-            // const response = await fetch(`/api/family-details/${familyId}`);
-            // if (!response.ok) {
-            //     throw new Error('Failed to fetch family details');
-            // }
-            // const data = await response.json();
+            const result = await fetchGraphQL(GET_FAMILY_DETAILS_QUERY, { family_id: familyId });
 
-            // For demo, just log and simulate a delay
-            console.log("Fetching family details for ID:", familyId);
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (!result.getFamilyDetails) {
+                dispatch(setSaving(false));
+                return null; // No family details exist yet
+            }
+
+            const data = result.getFamilyDetails;
+
+            // Map main parent from backend to frontend structure
+            const mainParent: ParentInfo = {
+                id: `main_${data.id}`,
+                firstName: data.main_parent_first_name,
+                lastName: data.main_parent_last_name,
+                dateOfBirth: data.main_parent_dob,
+                gender: data.main_parent_gender,
+                relationToChild: data.main_parent_relation_to_child,
+                educationLevel: data.main_parent_education_level,
+                parentalResponsibility: data.main_parent_parental_responsibility,
+                informationProvider: data.main_parent_information_provider
+            };
+
+            // Map supporting parents from backend to frontend structure
+            const supportingParents: ParentInfo[] = data.supporting_parents.map((sp: any) => ({
+                id: `support_${sp.id}`,
+                firstName: sp.first_name,
+                lastName: sp.last_name,
+                dateOfBirth: sp.dob,
+                gender: sp.gender,
+                relationToChild: sp.relation_to_child,
+                educationLevel: sp.education_level,
+                parentalResponsibility: sp.parental_responsibility,
+                informationProvider: sp.information_provider
+            }));
+
+            // Map children from backend to frontend structure
+            const children: ChildInfo[] = data.children.map((child: any) => ({
+                id: `child_${child.id}`,
+                firstName: child.first_name,
+                lastName: child.last_name,
+                dateOfBirth: child.dob,
+                gender: child.gender,
+                supportParent: child.support_parent,
+                supportParentFirstName: child.support_parent_first_name,
+                supportParentLastName: child.support_parent_last_name
+            }));
 
             dispatch(setSaving(false));
-            dispatch(setError(null));
 
-            // Return mock data for demonstration
             return {
-                id: familyId,
-                // ... would return actual data from backend
+                mainParentInfo: mainParent,
+                supportingParentsInfo: supportingParents,
+                childrenInfo: children
             };
         } catch (error) {
             dispatch(setSaving(false));
-            dispatch(setError(error instanceof Error ? error.message : "An unknown error occurred"));
-            throw error;
+            dispatch(setError(error instanceof Error ? error.message : "Failed to fetch family details"));
+            return rejectWithValue(error instanceof Error ? error.message : "Failed to fetch family details");
         }
     }
 );

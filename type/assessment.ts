@@ -16,10 +16,15 @@ export interface AssessmentFormItem extends AssessmentItem {
 
 // Parent information
 export interface ParentInfo {
-    id: string
-    firstName: string
-    lastName: string
-    dateOfBirth: string
+    id: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    gender: string;
+    relationToChild: string;
+    educationLevel: string;
+    parentalResponsibility: boolean;
+    informationProvider: boolean;
 }
 
 // Child information

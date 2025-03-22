@@ -16,7 +16,15 @@ import { GenderSelect } from "@/components/ui/gender-select"
 export interface InfoFormProps {
     open: boolean
     onClose: () => void
-    onSubmit: (data: { firstName: string; lastName: string; dateOfBirth: string }) => void
+    onSubmit: (data: {
+        firstName: string;
+        lastName: string;
+        dateOfBirth: string;
+        gender?: string;
+        relationToChild?: string;
+        educationLevel?: string;
+        parentalResponsibility?: boolean;
+        informationProvider?: boolean;}) => void
     title: string
     relationshipLabel?: string
     showParentalResponsibility?: boolean
@@ -71,6 +79,10 @@ export function InfoForm({
             lastName: formData.get("lastName") as string,
             dateOfBirth: date ? format(date, "dd/MM/yyyy") : "",
             gender: finalGender,
+            relationToChild: formData.get("relationship") as string || "",
+            educationLevel: formData.get("education") as string || "",
+            parentalResponsibility: parentalResponsibility,
+            informationProvider: informationProvider
         }
         onSubmit(data)
 

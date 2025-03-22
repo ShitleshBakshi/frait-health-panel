@@ -125,7 +125,17 @@ export function FamiliesContent({
     }
 
     const filteredAssessments = selectedFamily
-        ? assessments.filter(assessment => assessment.familyId === selectedFamily.id)
+        ? assessments.filter(assessment => {
+            const assessmentFamilyId = typeof assessment.familyId === 'string'
+                ? parseInt(assessment.familyId, 10)
+                : assessment.familyId;
+
+            const selectedFamilyId = typeof selectedFamily.id === 'string'
+                ? parseInt(selectedFamily.id, 10)
+                : selectedFamily.id;
+
+            return assessmentFamilyId === selectedFamilyId;
+        })
         : [];
 
     const renderActionButtons = (assessment: FamilyAssessment) => {

@@ -16,7 +16,7 @@ interface AssessmentState {
         childAssessment: AssessmentItem[];
         externalInfluenceAssessment: AssessmentItem[];
         familyId: number | null;
-        assessmentId: string | null;
+        assessmentId: number | null;
     };
     // Loading status
     loading: boolean;
@@ -54,7 +54,7 @@ const assessmentSlice = createSlice({
 
         // Load an existing assessment for editing
         loadAssessment: (state, action: PayloadAction<{
-            assessmentId: string;
+            assessmentId: number;
             mainParentAssessment: AssessmentItem[];
             supportingParentAssessment?: AssessmentItem[];
             childAssessment?: AssessmentItem[];

@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 // Define types matching backend models
 export interface ParentInfo {
+    id: string;
     firstName: string;
     lastName: string;
     dateOfBirth: string;
@@ -13,13 +14,14 @@ export interface ParentInfo {
 }
 
 export interface ChildInfo {
+    id: string;
     firstName: string;
     lastName: string;
     dateOfBirth: string;
     gender: string;
-    supportParent: boolean;
-    supportParentFirstName: string;
-    supportParentLastName: string;
+    supportParent?: boolean;
+    supportParentFirstName?: string;
+    supportParentLastName?: string;
 }
 
 // State structure for family details
@@ -30,6 +32,7 @@ interface FamilyDetailsState {
     children: ChildInfo[];
     isSaving: boolean;
     error: string | null;
+    lastSaved: string | null;
 }
 
 // Initial state
@@ -39,7 +42,8 @@ const initialState: FamilyDetailsState = {
     supportingParents: [],
     children: [],
     isSaving: false,
-    error: null
+    error: null,
+    lastSaved: null
 };
 
 // Create the slice
@@ -78,6 +82,13 @@ const familyDetailsSlice = createSlice({
         removeSupportingParent: (state, action: PayloadAction<number>) => {
             state.supportingParents = state.supportingParents.filter((_, index) => index !== action.payload);
         },
+        resetSupportingParents: (state) => {
+            state.supportingParents = [];
+        },
+        setSupportingParents: (state, action: PayloadAction<ParentInfo[]>) => {
+            state.supportingParents = action.payload;
+        },
+
 
         // Child actions
         addChild: (state, action: PayloadAction<ChildInfo>) => {
@@ -93,6 +104,13 @@ const familyDetailsSlice = createSlice({
             state.children = state.children.filter((_, index) => index !== action.payload);
         },
 
+        resetChildren: (state) => {
+            state.children = [];
+        },
+        setChildren: (state, action: PayloadAction<ChildInfo[]>) => {
+            state.children = action.payload;
+        },
+
         // Status actions
         setSaving: (state, action: PayloadAction<boolean>) => {
             state.isSaving = action.payload;
@@ -100,6 +118,24 @@ const familyDetailsSlice = createSlice({
         setError: (state, action: PayloadAction<string | null>) => {
             state.error = action.payload;
         },
+        setLastSaved: (state, action: PayloadAction<string>) => {
+            state.lastSaved = action.payload;
+        },
+
+        // Set complete family details
+        setFamilyDetails: (state, action: PayloadAction<{
+            id: string;
+            mainParent: ParentInfo;
+            supportingParent: ParentInfo;
+            child: ChildInfo;
+        }>) => {
+            const { id, mainParent, supportingParent, child } = action.payload;
+            state.familyId = id;
+            state.mainParent = mainParent;
+            state.supportingParents = [supportingParent];
+            state.children = [child];
+        },
+
 
         // Reset the entire state
         resetFamilyDetails: () => initialState
@@ -115,11 +151,17 @@ export const {
     addSupportingParent,
     updateSupportingParent,
     removeSupportingParent,
+    resetSupportingParents,
+    setSupportingParents,
     addChild,
     updateChild,
     removeChild,
+    resetChildren,
+    setChildren,
     setSaving,
     setError,
+    setLastSaved,
+    setFamilyDetails,
     resetFamilyDetails
 } = familyDetailsSlice.actions;
 

@@ -46,6 +46,67 @@ export async function fetchGraphQL(
     }
 }
 
+// === FAMILY DETAILS API UTILITIES ===
+
+/**
+ * GraphQL mutation for saving family details
+ */
+export const SAVE_FAMILY_DETAILS_MUTATION = `
+  mutation CreateFamilyDetails($family_details_input: FamilyDetailsInput!) {
+    createFamilyDetails(familyDetailsInput: $family_details_input)
+  }
+`;
+
+/**
+ * GraphQL query for fetching family details
+ */
+export const GET_FAMILY_DETAILS_QUERY = `
+  query GetFamilyDetails($family_id: Int!) {
+    getFamilyDetails(family_id: $family_id) {
+      id
+      main_parent_first_name
+      main_parent_last_name
+      main_parent_dob
+      main_parent_gender
+      main_parent_relation_to_child
+      main_parent_education_level
+      main_parent_parental_responsibility
+      main_parent_information_provider
+      supportingParents {
+        id
+        first_name
+        last_name
+        dob
+        gender
+        relation_to_child
+        education_level
+        parental_responsibility
+        information_provider
+      }
+      children {
+        id
+        first_name
+        last_name
+        gender
+        dob
+        support_parent
+        support_parent_first_name
+        support_parent_last_name
+      }
+    }
+  }
+`;
+
+/**
+ * Fetch family details for a specific family
+ * @param familyId The ID of the family to fetch details for
+ */
+export async function fetchFamilyDetails(familyId: number) {
+    return fetchGraphQL(GET_FAMILY_DETAILS_QUERY, { family_id: familyId });
+}
+
+
+
 // === ASSESSMENT API UTILITIES ===
 
 /**
@@ -62,11 +123,11 @@ export const SAVE_FRAT_ASSESSMENT_MUTATION = `
  * GraphQL mutation for saving FRAI assessment
  * This mutation sends the calculated scores for each category
  */
-// export const SAVE_FRAI_ASSESSMENT_MUTATION = `
-//   mutation CreateFraiAssessment($fraiInput: FraiAssessmentInput!) {
-//     createInitialFraiAssessment(frai_input: $fraiInput)
-//   }
-// `;
+export const SAVE_FRAI_ASSESSMENT_MUTATION = `
+  mutation CreateFraiAssessment($fraiInput: FraiAssessmentInput!) {
+    createInitialFraiAssessment(fraiInput: $fraiInput)
+  }
+`;
 
 /**
  * Helper function to dynamically generate a FRAT assessment mutation
@@ -143,7 +204,7 @@ export async function fetchFamilyAssessmentData(familyId: number) {
         family_engagement
         family_support
         socio_economic
-        overall_score
+        overallScore
       }
     }
   `;

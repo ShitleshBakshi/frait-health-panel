@@ -1,5 +1,10 @@
 import type { AssessmentItem } from "@/lib/slices/assessmentSlice";
 import type { AssessmentLevel } from "@/type/assessment";
+import { calculateCategoryScores,
+    calculateOverallScore,
+    getScoreForLevel,
+    assessmentMapping } from '@/lib/assessment-utils';
+import { RootState } from '@/lib/store';
 
 /**
  * Maps describing the relationship between frontend assessment items and backend fields
@@ -57,30 +62,6 @@ export const CHILD_TO_FRAT_MAP: Record<number, number> = {
     9: 36, // Frequent attendance at Emergency Department(s) → assessment_36
 };
 
-// Map assessment items to FRAI categories
-export const ASSESSMENT_TO_FRAI_MAP = {
-    // Main Parent Assessment items
-    mainParent: {
-        2: "family-health",    // Main Parent has mental health issues → Family Health
-        4: "responsive-parenting", // Main Parent's experience of good parenting → Responsive Parenting
-    },
-    // External Influence Assessment items
-    externalInfluence: {
-        4: "socio-economic",   // Family struggling to manage finances → Socio/Economic Factor
-        6: "family-support",   // Family access to extended family support → Family Support
-        9: "engagement",       // Family's ability to recognize problems → Engagement
-    },
-};
-
-// Score mapping for assessment levels
-export const ASSESSMENT_LEVEL_TO_SCORE: Record<AssessmentLevel, string> = {
-    "no-concern": "5",
-    "low": "5",
-    "low-med": "4",
-    "med": "3",
-    "med-high": "2",
-    "high": "1"
-};
 
 /**
  * Helper function to get FRAT field ID from a frontend assessment item
@@ -104,15 +85,15 @@ export function getFratFieldId(
 /**
  * Helper function to get FRAI category from a frontend assessment item
  */
-// export function getFraiCategory(
-//     assessmentType: 'mainParent' | 'externalInfluence',
-//     itemId: number
-// ): string | null {
-//     const categoryMap = ASSESSMENT_TO_FRAI_MAP[assessmentType];
-//     if (!categoryMap) return null;
-//
-//     return categoryMap[itemId as keyof typeof categoryMap] || null;
-// }
+export function getFraiCategory(
+    assessmentType: 'mainParent' | 'externalInfluence',
+    itemId: number
+): string | null {
+    const categoryMap = assessmentMapping[assessmentType];
+    if (!categoryMap) return null;
+
+    return categoryMap[itemId as keyof typeof categoryMap] || null;
+}
 
 /**
  * Generate a complete FRAT assessment payload from frontend assessment items
@@ -123,10 +104,13 @@ export function generateFratPayload(
     mainParentAssessment: AssessmentItem[],
     supportingParentAssessment: AssessmentItem[],
     childAssessment: AssessmentItem[],
-    externalInfluenceAssessment: AssessmentItem[]
+    externalInfluenceAssessment: AssessmentItem[],
+    assessmentNumber: number
 ): Record<string, any> {
     const payload: Record<string, any> = {
-        id: parseInt(String(familyId), 10)
+        id: parseInt(String(familyId), 10),
+        assessmentid: assessmentNumber.toString()
+
     };
 
     // Initialize all fields with default value
@@ -173,62 +157,44 @@ export function generateFratPayload(
  * Generate a FRAI assessment input from frontend assessment items
  * This calculates the scores for each category based on specific assessment items.
  */
-// export function generateFraiPayload(
-//     familyId: number,
-//     mainParentAssessment: AssessmentItem[],
-//     externalInfluenceAssessment: AssessmentItem[]
-// ): Record<string, any> {
-//     // Initialize categories with default highest scores
-//     const scores = {
-//         responsive_parenting: "5",
-//         family_health: "5",
-//         family_engagement: "5",
-//         family_support: "5",
-//         socio_economic: "5"
-//     };
-//
-//     // Process main parent assessment items
-//     mainParentAssessment.forEach(item => {
-//         if (item.id === 4 && item.level) {
-//             // Main Parent's experience of good parenting → Responsive Parenting
-//             scores.responsive_parenting = ASSESSMENT_LEVEL_TO_SCORE[item.level];
-//         } else if (item.id === 2 && item.level) {
-//             // Main Parent has mental health issues → Family Health
-//             scores.family_health = ASSESSMENT_LEVEL_TO_SCORE[item.level];
-//         }
-//     });
-//
-//     // Process external influence assessment items
-//     externalInfluenceAssessment.forEach(item => {
-//         if (item.id === 9 && item.level) {
-//             // Family's ability to recognize problems → Engagement
-//             scores.family_engagement = ASSESSMENT_LEVEL_TO_SCORE[item.level];
-//         } else if (item.id === 6 && item.level) {
-//             // Family access to extended family support → Family Support
-//             scores.family_support = ASSESSMENT_LEVEL_TO_SCORE[item.level];
-//         } else if (item.id === 4 && item.level) {
-//             // Family struggling to manage finances → Socio-Economic
-//             scores.socio_economic = ASSESSMENT_LEVEL_TO_SCORE[item.level];
-//         }
-//     });
-//
-//     // Calculate overall score (sum of all category scores)
-//     const overallScore = Object.values(scores)
-//         .reduce((sum, score) => sum + parseInt(score, 10), 0)
-//         .toString();
-//
-//     return {
-//         fraiInput: {
-//             id: familyId,
-//             responsive_parenting: scores.responsive_parenting,
-//             family_health: scores.family_health,
-//             family_engagement: scores.family_engagement,
-//             family_support: scores.family_support,
-//             socio_economic: scores.socio_economic,
-//             overall_score: overallScore
-//         }
-//     };
-// }
+export function generateFraiPayload(
+    familyId: number | string,
+    mainParentAssessment: AssessmentItem[],
+    externalInfluenceAssessment: AssessmentItem[]
+): Record<string, any> {
+    const partialState: Partial<RootState> = {
+        assessment: {
+            currentAssessment: {
+                mainParentAssessment,
+                externalInfluenceAssessment,
+                supportingParentAssessment: [],
+                childAssessment: [],
+                familyId: typeof familyId === 'string' ? parseInt(familyId, 10) : familyId,
+                assessmentId: null
+            },
+            loading: false,
+            error: null
+        }
+    } as any;
+
+    // Use the existing utility function to calculate category scores
+    const categoryScores = calculateCategoryScores(partialState as RootState);
+
+    // Use the existing utility function to calculate overall score
+    const overallScore = calculateOverallScore(categoryScores);
+
+    return {
+        fraiInput: {
+            id: parseInt(String(familyId), 10),
+            responsiveParenting: categoryScores["responsive-parenting"].toString(),
+            familyHealth: categoryScores["family-health"].toString(),
+            familyEngagement: categoryScores["engagement"].toString(),
+            familySupport: categoryScores["family-support"].toString(),
+            socioEconomic: categoryScores["socio-economic"].toString(),
+            overallScore: overallScore.toString()
+        }
+    };
+}
 
 /**
  * Convert backend FRAT assessment data to frontend format

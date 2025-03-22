@@ -72,7 +72,7 @@ export function useAssessment(
 
     // Get assessments by family ID
     const getAssessmentsByFamilyId = (familyId: string): FamilyAssessment[] => {
-        return assessments.filter(a => a.familyId === familyId)
+        return assessments.filter(a => String(a.familyId) === familyId)
     }
 
     // Create a new assessment
