@@ -21,6 +21,7 @@ import {ChildInfoForm} from "./child-info-form"
 import {ChildAssessment} from "./child-assessment"
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "./ui/dialog"
 import { useSelector, useDispatch } from "react-redux"
+import {useAuth} from "@/lib/auth-context"
 import {
     loadAssessment,
     updateMainParentAssessment,
@@ -80,7 +81,7 @@ interface FamilyAssessment {
     supportingParentAssessment: AssessmentItem[]
     childAssessment: AssessmentItem[]
     externalInfluenceAssessment: AssessmentItem[]
-    status: "DRAFT" | "IN PROGRESS" | "DONE"
+    status: "DRAFT" | "IN PROGRESS" | "DONE" | "PENDING_APPROVAL"
     assessorHv: string
     reviewerHv: string
     createdAt: string
@@ -91,7 +92,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
     const router = useRouter()
     const dispatch = useDispatch<AppDispatch>()
     const { toast } = useToast()
-
+    const { user } = useAuth()
     const prevFamilyIdRef = useRef<number | undefined | null>(null);
     const prevAssessmentIdRef = useRef<number | undefined | null>(null);
 
@@ -478,7 +479,9 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                 return;
             }
 
-            // Assessment number is already determined above
+            const status = user?.role === "Assistant Health Visitor" ? "PENDING_APPROVAL" : "DONE";
+
+
             const familyAssessment: FamilyAssessment = {
                 id: assessmentId,
                 familyId,
@@ -489,9 +492,9 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                 supportingParentAssessment: currentAssessment.supportingParentAssessment,
                 childAssessment: currentAssessment.childAssessment,
                 externalInfluenceAssessment: currentAssessment.externalInfluenceAssessment,
-                status: "DONE",
-                assessorHv: "Current User",
-                reviewerHv: "Current User",
+                status: status,
+                assessorHv: user?.username || "Current User",
+                reviewerHv: "Pending",
                 createdAt: currentTime,
                 updatedAt: currentTime
             }
@@ -801,6 +804,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                         <h2 className="font-medium">Assessment management</h2>
                     </div>
 
+
                     <Alert
                         variant={isAssessmentComplete ? "default" : "info"}
                         className={isAssessmentComplete ? "bg-blue-50 border-blue-200" : ""}
@@ -808,12 +812,18 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                         <div className="flex items-center justify-between">
                             <AlertDescription>
                                 {isAssessmentComplete
-                                    ? "Your assessment is ready to be finalised."
-                                    : "Please complete your assessment's required elements to finalise it."}
+                                    ? "Your assessment is ready to be " + (user?.role === "Assistant Health Visitor" ? "submitted for approval." : "finalized.")
+                                    : "Please complete your assessment's required elements to continue."}
                             </AlertDescription>
                             {isAssessmentComplete && (
-                                <Button onClick={handleFinalize} size="sm" className="bg-green-500 hover:bg-green-600 text-white">
-                                    Finalise
+                                <Button
+                                    onClick={handleFinalize}
+                                    size="sm"
+                                    className={user?.role === "Assistant Health Visitor"
+                                        ? "bg-orange-500 hover:bg-orange-600 text-white"
+                                        : "bg-green-500 hover:bg-green-600 text-white"}
+                                >
+                                    {user?.role === "Assistant Health Visitor" ? "Send for Approval" : "Finalise"}
                                 </Button>
                             )}
                         </div>

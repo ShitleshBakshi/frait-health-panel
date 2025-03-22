@@ -19,5 +19,5 @@ function FamiliesPage() {
     )
 }
 
-export default withAuth(FamiliesPage, ["super_admin"])
+export default withAuth(FamiliesPage, ["Health Visitor" ,"Assistant Health Visitor", "Manager", "Admin"])
 

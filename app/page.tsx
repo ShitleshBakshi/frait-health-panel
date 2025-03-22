@@ -1,68 +1,30 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { AlertTriangle } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import { useToast } from "@/components/ui/use-toast"
-import { useDispatch } from "react-redux"
-import { setUser } from "@/lib/slices/userSlice"
 
-export default function LoginPage() {
+export default function UnauthorizedPage() {
     const router = useRouter()
-    const { login } = useAuth()
-    const [username, setUsername] = useState("")
-    const [password, setPassword] = useState("")
-    const [error, setError] = useState("")
-    const { toast } = useToast()
-    const dispatch = useDispatch()
+    const { user, logout } = useAuth()
 
-    const validatePassword = (password: string) => {
-        const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{16,}$/
-        return regex.test(password)
+    // If no user, redirect to home/login
+    useEffect(() => {
+        if (!user) {
+            router.push("/")
+        }
+    }, [user, router])
+
+    const handleLogout = () => {
+        logout()
+        router.push("/")
     }
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!validatePassword(password)) {
-            setError("Invalid password. Please check the password requirements.")
-            toast({
-                title: "Login Failed",
-                description: "Invalid password. Please check the password requirements.",
-                variant: "destructive",
-            })
-            return
-        }
-        // TODO: perform authentication here
-        try {
-            const user = await login(username, password)
-            dispatch(
-                setUser({
-                    id: user.id,
-                    username: user.username,
-                    role: user.role,
-                    healthBoard: "Swansea Uni Health Board", // This should come from the backend in a real application
-                }),
-            )
-            toast({
-                title: "Login Successful",
-                description: "Welcome back!",
-            })
-            router.push("/dashboard")
-        } catch (error) {
-            setError("Invalid credentials. Please try again.")
-            toast({
-                title: "Login Failed",
-                description: "Please check your credentials and try again.",
-                variant: "destructive",
-            })
-        }
+    const handleGoHome = () => {
+        router.push("/dashboard")
     }
 
     return (
@@ -70,102 +32,48 @@ export default function LoginPage() {
             {/* Header */}
             <header className="bg-[#1e2756] text-white">
                 <div className="container mx-auto px-4">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center h-16">
                         <div className="h-10 w-24 relative">
-                            <Image
-                                src="/Frait-Logo.png"
-                                alt="FRAIT Logo"
-                                fill
-                                className="object-contain"
-                                priority
-                            />
+                            <div className="text-xl font-bold">FRAIT</div>
                         </div>
-                        <nav className="hidden md:flex ml-8 space-x-6">
-                            <Link href="/" className="hover:text-gray-200">
-                                Home
-                            </Link>
-                            <Link href="/" className="hover:text-gray-200">
-                                Content to add
-                            </Link>
-                            <Link href="/" className="hover:text-gray-200">
-                                Content to add
-                            </Link>
-                        </nav>
                     </div>
                 </div>
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 container mx-auto px-4 py-8">
-                <div className="max-w-md mx-auto space-y-8">
-                    <div>
-                        <h1 className="text-2xl font-bold">Login</h1>
-                        <p className="text-sm text-gray-600 mt-2">Please enter your credentials to access your account.</p>
-                    </div>
-
-                    <form onSubmit={handleLogin} className="space-y-6">
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label htmlFor="username" className="block text-sm font-medium">
-                                    Username
-                                </label>
-                                <Input
-                                    id="username"
-                                    type="text"
-                                    required
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label htmlFor="password" className="block text-sm font-medium">
-                                    Password
-                                </label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                />
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="save-password" />
-                                <label
-                                    htmlFor="save-password"
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                    Save Password
-                                </label>
-                            </div>
+            <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
+                <Card className="w-full max-w-md">
+                    <CardHeader className="text-center">
+                        <div className="flex justify-center mb-4">
+                            <AlertTriangle className="h-12 w-12 text-orange-500" />
                         </div>
+                        <CardTitle className="text-2xl font-bold">Unauthorized Access</CardTitle>
 
-                        {error && (
-                            <Alert variant="destructive">
-                                <AlertDescription>{error}</AlertDescription>
-                            </Alert>
-                        )}
+                            You don't have permission to access this page with your current role: {user?.role}
 
-                        <div className="space-y-4">
-                            <Button type="submit" className="w-full bg-[#1e56b0] hover:bg-[#1a4c9e]">
-                                Login
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-gray-600 text-center">
+                            Please select a different role or return to the dashboard.
+                        </p>
+                        <div className="flex flex-col space-y-2">
+                            <Button
+                                onClick={handleGoHome}
+                                className="w-full bg-[#1e56b0] hover:bg-[#1a4c9e]"
+                            >
+                                Return to Dashboard
                             </Button>
-
-                            <div className="flex items-center justify-between">
-                                <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
-                                    Forgotten password?
-                                </Link>
-                                <Link href="/register" className="text-sm text-blue-600 hover:underline">
-                                    New Registration
-                                </Link>
-                            </div>
+                            <Button
+                                onClick={handleLogout}
+                                variant="outline"
+                                className="w-full"
+                            >
+                                Change Role
+                            </Button>
                         </div>
-                    </form>
-                </div>
+                    </CardContent>
+                </Card>
             </main>
         </div>
     )
 }
-

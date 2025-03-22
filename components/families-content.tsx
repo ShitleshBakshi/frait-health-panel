@@ -4,7 +4,7 @@ import {useEffect, useState} from "react"
 import { Input } from "./ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
 import { Button } from "./ui/button"
-import {ChevronLeft, ChevronRight, MoreHorizontal, Plus, Clock, Eye, Copy, FileText} from "lucide-react"
+import {ChevronLeft, ChevronRight, MoreHorizontal, Plus, Clock, Eye, Copy, FileText, UserPlus} from "lucide-react"
 import Link from "next/link"
 import { setCurrentFamily, addFamily, addFamiliesBulk, fetchFamilies, type Family } from "@/lib/slices/familySlice"
 import {useDispatch, useSelector} from "react-redux";
@@ -13,6 +13,9 @@ import type { FamilyAssessment } from "@/type/assessment"
 import {useToast} from "@/hooks/use-toast";
 import {NewFamilyForm} from "@/components/NewFamilyForm";
 import {Alert, AlertDescription} from "@/components/ui/alert";
+import { useAuth } from "@/lib/auth-context"
+import { FamilyAssignmentModal } from "./FamilyAssignmentModal"
+import { AssessmentApprovalModal } from "./AssessmentApprovalModal"
 
 interface FamiliesContentProps {
     initialFamilyId?: string
@@ -25,10 +28,14 @@ export function FamiliesContent({
                                 }: FamiliesContentProps)  {
     const dispatch = useDispatch<AppDispatch>();
     const { toast } = useToast();
+    const { user, isAssignedFamily, getAssignedFamilies, getPendingAssessments } = useAuth()
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedFamily, setSelectedFamily] = useState<Family | null>(null)
     const [showAssessments, setShowAssessments] = useState(initialShowAssessments || !!initialFamilyId)
     const [newFamilyFormOpen, setNewFamilyFormOpen] = useState(false)
+    const [assignFamilyModalOpen, setAssignFamilyModalOpen] = useState(false)
+    const [approvalModalOpen, setApprovalModalOpen] = useState(false)
+    const [selectedAssessment, setSelectedAssessment] = useState<any>(null)
 
     // Get families & assessments from Redux store
     const families = useSelector((state: RootState) => state.family.families)
@@ -37,11 +44,19 @@ export function FamiliesContent({
     const loading = useSelector((state: RootState) => state.family.loading)
     const error = useSelector((state: RootState) => state.family.error)
 
-    // Filter families based on search term
-    const filteredFamilies = families.filter((family) =>
+    // Filter families based on role and search term
+    const filteredFamilies = families.filter((family) =>{
+        // For Assistant Health Visitors, only show assigned families
+        if (user?.role === "Assistant Health Visitor") {
+            const assignedFamilies = getAssignedFamilies()
+            if (!assignedFamilies.includes(family.id.toString())) {
+                return false
+            }
+        }
+
         family && family.name ?
             family.name.toLowerCase().includes(searchTerm.toLowerCase()) :
-            false)
+            false})
 
     const handleFamilySelect = (family: Family) => {
         setSelectedFamily(family)
@@ -125,18 +140,34 @@ export function FamiliesContent({
     }
 
     const filteredAssessments = selectedFamily
-        ? assessments.filter(assessment => {
-            const assessmentFamilyId = typeof assessment.familyId === 'string'
-                ? parseInt(assessment.familyId, 10)
-                : assessment.familyId;
+        ? assessments.filter((assessment) => {
+            const assessmentFamilyId =
+                typeof assessment.familyId === 'string' ? parseInt(assessment.familyId, 10) : assessment.familyId;
 
-            const selectedFamilyId = typeof selectedFamily.id === 'string'
-                ? parseInt(selectedFamily.id, 10)
-                : selectedFamily.id;
+            const selectedFamilyId =
+                typeof selectedFamily.id === 'string' ? parseInt(selectedFamily.id, 10) : selectedFamily.id;
 
             return assessmentFamilyId === selectedFamilyId;
         })
         : [];
+
+    // Get pending assessments that need approval (for Health Visitors)
+    const pendingApprovals = getPendingAssessments()
+
+    // Open approval modal for a specific assessment
+    const openApprovalModal = (assessment: FamilyAssessment) => {
+        // In a real application, you would fetch assessment details here
+        setSelectedAssessment({
+            id: assessment.id,
+            familyId: assessment.familyId,
+            familyName: selectedFamily?.name || "Unknown Family",
+            assistantId: "asst_1", // This would come from the real data
+            assistantName: "Assistant Smith", // This would come from the real data
+            date: new Date().toLocaleDateString(),
+        })
+        setApprovalModalOpen(true)
+    }
+
 
     const renderActionButtons = (assessment: FamilyAssessment) => {
         return (
@@ -182,6 +213,18 @@ export function FamiliesContent({
                         </Link>
                     </>
                 )}
+
+                {/* For Health Visitors - Approval button for pending assessments */}
+                {user?.role === "Health Visitor" && assessment.status === "PENDING_APPROVAL" && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200"
+                        onClick={() => openApprovalModal(assessment)}
+                    >
+                        Review
+                    </Button>
+                )}
             </div>
         )
     }
@@ -198,6 +241,17 @@ export function FamiliesContent({
                         >
                             <Plus className="mr-2 h-4 w-4" /> New Family
                         </Button>
+
+                        {/* Add Assign button for Health Visitors */}
+                        {user?.role === "Health Visitor" && selectedFamily && (
+                            <Button
+                                onClick={() => setAssignFamilyModalOpen(true)}
+                                className="bg-purple-600 hover:bg-purple-700"
+                            >
+                                <UserPlus className="mr-2 h-4 w-4" /> Assign
+                            </Button>
+                        )}
+
                     </div>
 
                     {/* Error alert if there's an error from Redux */}
@@ -227,7 +281,15 @@ export function FamiliesContent({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredFamilies.map((family) => (
+                                    {filteredFamilies.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center py-4 text-gray-500">
+                                                {user?.role === "Assistant Health Visitor"
+                                                    ? "No assigned families found. Families must be assigned by a Health Visitor."
+                                                    : "No families found matching your search criteria."}
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : ( filteredFamilies.map((family) => (
                                         <TableRow key={family.id}>
                                             <TableCell>{family.id}</TableCell>
                                             <TableCell>{family.name}</TableCell>
@@ -244,7 +306,8 @@ export function FamiliesContent({
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    ))
+                                    )}
                                 </TableBody>
                             </Table>
                         </div>
@@ -336,7 +399,9 @@ export function FamiliesContent({
                                                         ? "bg-green-100 text-green-800"
                                                         : assessment.status === "IN PROGRESS"
                                                             ? "bg-blue-100 text-blue-800"
-                                                            : "bg-gray-100 text-gray-800"
+                                                            : assessment.status === "PENDING_APPROVAL"
+                                                                ? "bg-orange-100 text-orange-800"
+                                                                : "bg-gray-100 text-gray-800"
                                                 }`}
                                             >
                                                 {assessment.status}
@@ -389,6 +454,23 @@ export function FamiliesContent({
                 onSubmit={handleAddFamily}
                 onExcelUpload={handleExcelUpload}
             />
+            {/* Family Assignment Modal */}
+            {selectedFamily && (
+                <FamilyAssignmentModal
+                    open={assignFamilyModalOpen}
+                    onClose={() => setAssignFamilyModalOpen(false)}
+                    familyId={selectedFamily.id.toString()}
+                    familyName={selectedFamily.name}
+                />
+            )}
+            {/* Assessment Approval Modal */}
+            {selectedAssessment && (
+                <AssessmentApprovalModal
+                    open={approvalModalOpen}
+                    onClose={() => setApprovalModalOpen(false)}
+                    assessment={selectedAssessment}
+                />
+            )}
         </div>
     )
 }

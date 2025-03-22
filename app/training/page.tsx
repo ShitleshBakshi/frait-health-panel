@@ -19,5 +19,5 @@ function TrainingPage() {
     )
 }
 
-export default withAuth(TrainingPage, ["super_admin", "restricted_user"])
+export default withAuth(TrainingPage, ["Health Visitor" ,"Assistant Health Visitor", "Manager", "Admin"])
 

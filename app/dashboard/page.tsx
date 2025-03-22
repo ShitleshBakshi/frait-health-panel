@@ -19,5 +19,5 @@ function DashboardPage() {
     )
 }
 
-export default withAuth(DashboardPage, ["super_admin"])
+export default withAuth(DashboardPage, ["Health Visitor" ,"Assistant Health Visitor", "Manager", "Admin"])
 

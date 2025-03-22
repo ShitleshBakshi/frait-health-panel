@@ -3,35 +3,35 @@
 import { Header } from "@/components/header"
 import { Sidebar } from "@/components/sidebar"
 import { FamilyAssessment } from "@/components/family-assessment"
-import { useAuth } from "@/lib/auth-context"
+import { useMultiRoleAuth } from "@/components/with-auth"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
 export default function AssessmentPage({ params, searchParams }: {
-    params: { id: number; assessid: string };
+    params: { id: number; assessid: number };
     searchParams?: { mode?: string }
 }) {
     // Implement authentication directly instead of using withAuth
-    const { user } = useAuth()
+    const { isAuthorized, isLoading } = useMultiRoleAuth([
+        "Health Visitor",
+        "Assistant Health Visitor",
+        "Manager",
+        "Admin"
+    ])
+
     const router = useRouter()
-
-    // Handle authentication directly in the component
-    useEffect(() => {
-        if (!user) {
-            router.push("/")
-        } else if (user.role !== "super_admin") {
-            router.push("/unauthorized")
-        }
-    }, [user, router])
-
-    // Return null while checking auth or if not authorized
-    if (!user || user.role !== "super_admin") {
-        return null
-    }
 
     // Determine if we're in view mode based on the search params
     const mode = searchParams?.mode === "view" ? "view" : "edit";
 
+    if (isLoading) {
+        return null
+    }
+
+    // Don't render if not authorized
+    if (!isAuthorized) {
+        return null
+    }
 
     return (
         <div className="min-h-screen flex flex-col">

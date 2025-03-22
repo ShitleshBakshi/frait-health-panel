@@ -2,7 +2,7 @@ import { Header } from "@/components/header"
 import { Sidebar } from "@/components/sidebar"
 import { FamilyAssessment } from "@/components/family-assessment"
 
-export default function NewAssessmentPage({ params }: { params: { id: string } }) {
+export default function NewAssessmentPage({ params }: { params: { id: number } }) {
     return (
         <div className="min-h-screen flex flex-col">
             <Header />
