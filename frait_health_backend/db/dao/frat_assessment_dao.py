@@ -59,6 +59,7 @@ class FratAssessmentDAO:
         Add single frat assessment details record to session.
 
         :param id: foreign key from initial_families
+        :param assessmentid: unique identifier for this assessment
         :param assessment_1 to assessment_36 for assessment values
         """
         self.session.add(
@@ -105,14 +106,16 @@ class FratAssessmentDAO:
         )
         await self.session.flush()
 
-    async def get_all_frat_assessment_details(self) -> List[FratAssessmentModel]:
+    async def get_all_frat_assessment_details(self, limit: int = 100, offset: int = 0) -> List[FratAssessmentModel]:
         """
         Get all frat assessment.
 
+        :param limit: maximum number of records to return
+        :param offset: number of records to skip
         :return: list of frat assessment
         """
         raw_frat_assessment = await self.session.execute(
-            select(FratAssessmentModel),
+            select(FratAssessmentModel).limit(limit).offset(offset),
         )
 
         return list(raw_frat_assessment.scalars().fetchall())
@@ -129,6 +132,43 @@ class FratAssessmentDAO:
         """
         raw_frat_assessment = await self.session.execute(
             select(FratAssessmentModel).where(FratAssessmentModel.id == family_id),
+        )
+
+        return raw_frat_assessment.scalars().first()
+
+    async def get_frat_assessments_by_family(
+        self,
+        family_id: int,
+    ) -> List[FratAssessmentModel]:
+        """
+        Get all assessments for a specific family.
+
+        :param family_id: id of the family
+        :return: list of frat assessments for matching family id
+        """
+        raw_frat_assessments = await self.session.execute(
+            select(FratAssessmentModel).where(FratAssessmentModel.id == family_id),
+        )
+
+        return list(raw_frat_assessments.scalars().fetchall())
+
+    async def get_specific_frat_assessment(
+        self,
+        family_id: int,
+        assessment_id: str,
+    ) -> Optional[FratAssessmentModel]:
+        """
+        Get a specific assessment by family id and assessment id.
+
+        :param family_id: id of the family
+        :param assessment_id: id of the assessment
+        :return: frat assessment for matching family id and assessment id
+        """
+        raw_frat_assessment = await self.session.execute(
+            select(FratAssessmentModel).where(
+                FratAssessmentModel.id == family_id,
+                FratAssessmentModel.assessmentid == assessment_id,
+                ),
         )
 
         return raw_frat_assessment.scalars().first()

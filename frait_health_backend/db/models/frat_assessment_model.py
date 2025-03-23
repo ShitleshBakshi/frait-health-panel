@@ -11,7 +11,7 @@ class FratAssessmentModel(Base):
     __tablename__ = "frat_assessment"
 
     id: Mapped[int] = mapped_column(ForeignKey("initial_families.id"), primary_key=True)
-    assessmentid: Mapped[str] = mapped_column(String(length=200))
+    assessmentid: Mapped[str] = mapped_column(String(length=200), primary_key=True)
     assessment_1: Mapped[str | None] = mapped_column(String(length=200), nullable=True)
     assessment_2: Mapped[str] = mapped_column(String(length=200))
     assessment_3: Mapped[str | None] = mapped_column(String(length=200), nullable=True)
