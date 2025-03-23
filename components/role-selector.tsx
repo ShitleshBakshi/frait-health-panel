@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { useDispatch } from "react-redux"
-import { useAuth, setUser } from "@/lib/auth-context"
+import { useAuth } from "@/lib/auth-context"
+import {setUser} from "@/lib/slices/userSlice"
 
 export default function RoleSelector() {
     const router = useRouter()

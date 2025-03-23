@@ -14,13 +14,13 @@ export default function UnauthorizedPage() {
     // If no user, redirect to home/login
     useEffect(() => {
         if (!user) {
-            router.push("/")
+            router.push("/login")
         }
     }, [user, router])
 
     const handleLogout = () => {
         logout()
-        router.push("/")
+        router.push("/login")
     }
 
     const handleGoHome = () => {

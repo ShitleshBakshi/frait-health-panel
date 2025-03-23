@@ -46,6 +46,7 @@ export function FamiliesContent({
 
     // Filter families based on role and search term
     const filteredFamilies = families.filter((family) =>{
+        if (!family || !family.name) return false;
         // For Assistant Health Visitors, only show assigned families
         if (user?.role === "Assistant Health Visitor") {
             const assignedFamilies = getAssignedFamilies()
@@ -54,7 +55,7 @@ export function FamiliesContent({
             }
         }
 
-        family && family.name ?
+        return family && family.name ?
             family.name.toLowerCase().includes(searchTerm.toLowerCase()) :
             false})
 
@@ -64,10 +65,36 @@ export function FamiliesContent({
         dispatch(setCurrentFamily(family.id.toString()));
     }
 
+    // // Open the assign family modal
+    // const handleOpenAssignModal = () => {
+    //     if (selectedFamily) {
+    //         setAssignFamilyModalOpen(true)
+    //     } else {
+    //         toast({
+    //             title: "No family selected",
+    //             description: "Please select a family to assign first.",
+    //             variant: "destructive"
+    //         });
+    //     }
+    // }
+
     // Initial load of family data
     useEffect(() => {
         dispatch(fetchFamilies())
     }, [dispatch])
+
+    // Listen for family assignment updates (especially for Assistant Health Visitors)
+    useEffect(() => {
+        const handleAssignmentUpdate = () => {
+            // Refresh families when assignments change
+            dispatch(fetchFamilies());
+        };
+
+        window.addEventListener('familyAssignmentUpdated', handleAssignmentUpdate);
+        return () => {
+            window.removeEventListener('familyAssignmentUpdated', handleAssignmentUpdate);
+        };
+    }, [dispatch]);
 
     // Set selected family from initialFamilyId
     useEffect(() => {
@@ -83,12 +110,28 @@ export function FamiliesContent({
     // Handler for adding a new family manually
     const handleAddFamily = async (familyData: any) => {
         try {
-            await dispatch(addFamily(familyData)).unwrap()
+            const newFamily = await dispatch(addFamily(familyData)).unwrap()
             toast({
                 title: "Success",
                 description: "Family  has been added successfully."
             })
             setNewFamilyFormOpen(false)
+
+            dispatch(fetchFamilies());
+
+            if (user?.role === "Health Visitor") {
+                // Wait a moment for the Redux store to update
+                setTimeout(() => {
+                    setSelectedFamily(newFamily);
+                    dispatch(setCurrentFamily(newFamily.id.toString()));
+                    toast({
+                        title: "Family Selected",
+                        description: `You can now assign this family to an Assistant Health Visitor or create an assessment.`,
+                        duration: 5000,
+                    });
+                }, 500);
+            }
+
         } catch (error) {
             toast({
                 title: "Error",
@@ -235,6 +278,15 @@ export function FamiliesContent({
                 <>
                     <div className="flex justify-between items-center">
                         <h1 className="text-2xl font-semibold text-gray-900">Families</h1>
+                        {/* Add Assign button for Health Visitors */}
+                        {user?.role === "Health Visitor" && (
+                            <Button
+                                onClick={() => setAssignFamilyModalOpen(true)}
+                                className="bg-blue-600 hover:bg-blue-700"
+                            >
+                                <UserPlus className="mr-2 h-4 w-4" /> Assign Family
+                            </Button>
+                        )}
                         <Button
                             onClick={() => setNewFamilyFormOpen(true)}
                             className="bg-blue-600 hover:bg-blue-700"
@@ -246,7 +298,7 @@ export function FamiliesContent({
                         {user?.role === "Health Visitor" && selectedFamily && (
                             <Button
                                 onClick={() => setAssignFamilyModalOpen(true)}
-                                className="bg-purple-600 hover:bg-purple-700"
+                                className="bg-blue-600 hover:bg-blue-700"
                             >
                                 <UserPlus className="mr-2 h-4 w-4" /> Assign
                             </Button>
@@ -454,15 +506,10 @@ export function FamiliesContent({
                 onSubmit={handleAddFamily}
                 onExcelUpload={handleExcelUpload}
             />
-            {/* Family Assignment Modal */}
-            {selectedFamily && (
-                <FamilyAssignmentModal
-                    open={assignFamilyModalOpen}
-                    onClose={() => setAssignFamilyModalOpen(false)}
-                    familyId={selectedFamily.id.toString()}
-                    familyName={selectedFamily.name}
-                />
-            )}
+            <FamilyAssignmentModal
+                open={assignFamilyModalOpen}
+                onClose={() => setAssignFamilyModalOpen(false)}
+            />
             {/* Assessment Approval Modal */}
             {selectedAssessment && (
                 <AssessmentApprovalModal

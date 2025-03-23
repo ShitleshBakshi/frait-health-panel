@@ -2,8 +2,16 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-import { useDispatch } from "react-redux"
+import {useDispatch, useSelector} from "react-redux"
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
+import {RootState} from "@/lib/store";
+import {
+    setUser,
+    clearUser,
+    assignFamilyToAssistant,
+    addPendingAssessment as addPendingAssessmentAction,
+    removeAssessment
+} from "@/lib/slices/userSlice"
 
 // Define the User Role type for the application
 export type UserRole = "Health Visitor" | "Assistant Health Visitor" | "Manager" | "Admin"
@@ -18,35 +26,33 @@ export type User = {
     assignedFamilies?: string[]
 }
 
-// Create a Redux slice for user state - incorporated from userSlice.ts
-export const userSlice = createSlice({
-    name: "user",
-    initialState: {
-        id: "",
-        username: "",
-        role: "Assistant Health Visitor" as UserRole,
-        healthBoard: "",
-    },
-    reducers: {
-        setUser: (state, action: PayloadAction<{
-            id: string;
-            username: string;
-            role: UserRole;
-            healthBoard: string;
-        }>) => {
-            return { ...state, ...action.payload }
-        },
-        clearUser: (state) => {
-            state.id = ""
-            state.username = ""
-            state.role = "Assistant Health Visitor"
-            state.healthBoard = ""
-        },
-    },
-})
+// // Create a Redux slice for user state - incorporated from userSlice.ts
+// export const userSlice = createSlice({
+//     name: "user",
+//     initialState: {
+//         id: "",
+//         username: "",
+//         role: "Assistant Health Visitor" as UserRole,
+//         healthBoard: "",
+//     },
+//     reducers: {
+//         setUser: (state, action: PayloadAction<{
+//             id: string;
+//             username: string;
+//             role: UserRole;
+//             healthBoard: string;
+//         }>) => {
+//             return { ...state, ...action.payload }
+//         },
+//         clearUser: (state) => {
+//             state.id = ""
+//             state.username = ""
+//             state.role = "Assistant Health Visitor"
+//             state.healthBoard = ""
+//         },
+//     },
+// })
 
-// Export the Redux actions
-export const { setUser, clearUser } = userSlice.actions
 
 // Define the interface for auth context
 type AuthContextType = {
@@ -62,13 +68,6 @@ type AuthContextType = {
     addPendingAssessment: (assessmentId: string, familyId: string) => void
 }
 
-// Interface for pending assessments
-interface PendingAssessment {
-    id: string
-    familyId: string
-    assistantId: string
-}
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const useAuth = () => {
@@ -81,37 +80,16 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const dispatch = useDispatch()
-    const [user, setUserState] = useState<User | null>(null)
-    const [assignedFamilies, setAssignedFamilies] = useState<Record<string, string[]>>({})
-    const [pendingAssessments, setPendingAssessments] = useState<PendingAssessment[]>([])
+    // Get user data from Redux store
+    const reduxUser = useSelector((state: RootState) => state.user)
 
-    useEffect(() => {
-        // Check for existing session
-        const storedUser = localStorage.getItem("user")
-        if (storedUser) {
-            const parsedUser = JSON.parse(storedUser)
-            setUserState(parsedUser)
-
-            // Also update Redux store
-            dispatch(setUser({
-                id: parsedUser.id,
-                username: parsedUser.username,
-                role: parsedUser.role,
-                healthBoard: parsedUser.healthBoard
-            }))
-        }
-
-        // Load assignments and pending assessments from localStorage
-        const storedAssignments = localStorage.getItem("assignedFamilies")
-        if (storedAssignments) {
-            setAssignedFamilies(JSON.parse(storedAssignments))
-        }
-
-        const storedPendingAssessments = localStorage.getItem("pendingAssessments")
-        if (storedPendingAssessments) {
-            setPendingAssessments(JSON.parse(storedPendingAssessments))
-        }
-    }, [dispatch])
+    // Create user object if we have an ID
+    const user = reduxUser.id ? {
+        id: reduxUser.id,
+        username: reduxUser.username,
+        role: reduxUser.role,
+        healthBoard: reduxUser.healthBoard
+    } : null;
 
     const selectRole = async (role: string): Promise<User> => {
         const roleMap: Record<string, UserRole> = {
@@ -135,10 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             healthBoard: "Swansea Uni Health Board"
         }
 
-        // Update local state
-        setUserState(newUser)
-
-        // Update Redux store
+        // Update Redux store only
         dispatch(setUser({
             id: newUser.id,
             username: newUser.username,
@@ -146,38 +121,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             healthBoard: newUser.healthBoard
         }))
 
-        // Store in localStorage
-        localStorage.setItem("user", JSON.stringify(newUser))
-
         return newUser
     }
 
     const logout = () => {
-        // Clear local state
-        setUserState(null)
-
-        // Clear Redux store
+        // Clear Redux store only
         dispatch(clearUser())
-
-        // Clear from localStorage
-        localStorage.removeItem("user")
     }
 
-    // Family assignment functions
+    // Family assignment functions using Redux
     const assignFamily = (familyId: string, assistantId: string) => {
-        const newAssignments = { ...assignedFamilies }
-
-        // Initialize if this assistant doesn't have assignments yet
-        if (!newAssignments[assistantId]) {
-            newAssignments[assistantId] = []
-        }
-
-        // Add the family if not already assigned
-        if (!newAssignments[assistantId].includes(familyId)) {
-            newAssignments[assistantId].push(familyId)
-            setAssignedFamilies(newAssignments)
-            localStorage.setItem("assignedFamilies", JSON.stringify(newAssignments))
-        }
+        dispatch(assignFamilyToAssistant({ familyId, assistantId }))
     }
 
     const isAssignedFamily = (familyId: string) => {
@@ -187,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (user.role !== "Assistant Health Visitor") return true
 
         // For Assistant Health Visitors, check if this family is assigned
-        return assignedFamilies[user.id]?.includes(familyId) || false
+        return reduxUser.assignedFamilies[user.id]?.includes(familyId) || false
     }
 
     const getAssignedFamilies = () => {
@@ -195,43 +149,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Assistant Health Visitors only see their assigned families
         if (user.role === "Assistant Health Visitor") {
-            return assignedFamilies[user.id] || []
+            return reduxUser.assignedFamilies[user.id] || []
         }
 
         // Others can see all families
         return []
     }
 
-    // Assessment approval functions
+    // Assessment approval functions using Redux
     const getPendingAssessments = () => {
-        return pendingAssessments
+        return reduxUser.pendingAssessments
     }
 
     const approveAssessment = (assessmentId: string) => {
-        // Remove from pending and update storage
-        const updatedPending = pendingAssessments.filter(a => a.id !== assessmentId)
-        setPendingAssessments(updatedPending)
-        localStorage.setItem("pendingAssessments", JSON.stringify(updatedPending))
+        dispatch(removeAssessment(assessmentId))
     }
 
     const rejectAssessment = (assessmentId: string) => {
-        // Same logic as approve for now, but could add rejection reason, etc.
-        const updatedPending = pendingAssessments.filter(a => a.id !== assessmentId)
-        setPendingAssessments(updatedPending)
-        localStorage.setItem("pendingAssessments", JSON.stringify(updatedPending))
+        dispatch(removeAssessment(assessmentId))
     }
 
-    // Add a pending assessment (to be called from Send for Approval button)
-    const addPendingAssessment = (assessmentId: string, familyId: string) => {
+    // Add a pending assessment
+    const addPendingAssessmentToRedux = (assessmentId: string, familyId: string) => {
         if (!user) return
 
-        const newPending = [
-            ...pendingAssessments,
-            { id: assessmentId, familyId, assistantId: user.id }
-        ]
-
-        setPendingAssessments(newPending)
-        localStorage.setItem("pendingAssessments", JSON.stringify(newPending))
+        dispatch(addPendingAssessmentAction({
+            assessmentId,
+            familyId,
+            assistantId: user.id
+        }))
     }
 
     return (
@@ -246,7 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 getPendingAssessments,
                 approveAssessment,
                 rejectAssessment,
-                addPendingAssessment
+                addPendingAssessment: addPendingAssessmentToRedux
             }}
         >
             {children}

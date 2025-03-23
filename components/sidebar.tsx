@@ -7,14 +7,14 @@ import { LayoutDashboard, Users, GraduationCap, User, Key, LogOut } from "lucide
 import { useAuth } from "@/lib/auth-context"
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["super_admin"] },
-  { name: "Families", href: "/families", icon: Users, roles: ["super_admin"] },
-  { name: "FRAIT Training", href: "/training", icon: GraduationCap, roles: ["super_admin", "restricted_user"] },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["Health Visitor", "Assistant Health Visitor", "Manager", "Admin"] },
+  { name: "Families", href: "/families", icon: Users, roles: ["Health Visitor", "Assistant Health Visitor", "Manager", "Admin"] },
+  { name: "FRAIT Training", href: "/training", icon: GraduationCap, roles: ["Health Visitor", "Assistant Health Visitor", "Manager", "Admin"] },
 ]
 
 const userNavigation = [
-  { name: "My profile", href: "/profile", icon: User, roles: ["super_admin", "restricted_user"] },
-  { name: "Change your password", href: "/change-password", icon: Key, roles: ["super_admin", "restricted_user"] },
+  { name: "My profile", href: "/profile", icon: User, roles: ["Health Visitor", "Assistant Health Visitor", "Manager", "Admin"] },
+  { name: "Change your password", href: "/change-password", icon: Key, roles: ["Health Visitor", "Assistant Health Visitor", "Manager", "Admin"] },
 ]
 
 export function Sidebar() {

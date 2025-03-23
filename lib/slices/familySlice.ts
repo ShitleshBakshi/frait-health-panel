@@ -30,6 +30,11 @@ export interface Family {
 }
 
 
+// Track which families are assigned to which assistants
+interface FamilyAssignments {
+    [assistantId: string]: string[]; // array of family IDs
+}
+
 interface FamilyState {
     families: Family[]
     assessments: FamilyAssessment[]
@@ -37,6 +42,7 @@ interface FamilyState {
     nextFamilyId: number
     loading: boolean
     error: string | null
+    familyAssignments: FamilyAssignments
 }
 
 const initialState: FamilyState = {
@@ -45,7 +51,8 @@ const initialState: FamilyState = {
     currentFamilyId: null,
     nextFamilyId: 1,
     loading: false,
-    error: null
+    error: null,
+    familyAssignments: {}
 }
 
 // GraphQL query to fetch families
@@ -213,6 +220,38 @@ const familySlice = createSlice({
         // Set error state
         setError: (state, action: PayloadAction<string | null>) => {
             state.error = action.payload;
+        },
+
+        // Assign a family to an assistant health visitor
+        assignFamily: (state, action: PayloadAction<{familyId: string, assistantId: string}>) => {
+            const { familyId, assistantId } = action.payload;
+
+            // Initialize array for this assistant if it doesn't exist
+            if (!state.familyAssignments[assistantId]) {
+                state.familyAssignments[assistantId] = [];
+            }
+
+            // Add family if not already assigned
+            if (!state.familyAssignments[assistantId].includes(familyId)) {
+                state.familyAssignments[assistantId].push(familyId);
+            }
+        },
+
+        // Unassign a family from an assistant health visitor
+        unassignFamily: (state, action: PayloadAction<{familyId: string, assistantId: string}>) => {
+            const { familyId, assistantId } = action.payload;
+
+            if (state.familyAssignments[assistantId]) {
+                state.familyAssignments[assistantId] = state.familyAssignments[assistantId]
+                    .filter(id => id !== familyId);
+            }
+        },
+
+        // Get all families assigned to an assistant
+        getAssignedFamilies: (state, action: PayloadAction<{assistantId: string}>) => {
+            // This is a read-only operation but we included it for completeness
+            // Actual data retrieval will happen in a selector
+            return state;
         }
     },
     extraReducers: (builder) => {
@@ -274,7 +313,7 @@ const familySlice = createSlice({
 const persistConfig = {
     key: 'family',
     storage,
-    whitelist: ['families','assessments']
+    whitelist: ['families','assessments', 'familyAssignments']
 };
 
 // Create and export the persisted reducer
@@ -288,7 +327,10 @@ export const {
     removeFamilyAssessment,
     clearFamilyAssessments,
     setLoading,
-    setError
+    setError,
+    assignFamily,
+    unassignFamily,
+    getAssignedFamilies
 } = familySlice.actions
 
 export default persistedReducer;
