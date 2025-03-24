@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"  # Fixed port instead of range
+    volumes:
+      - ./:/app
+    environment:
+      - PORT=3000  # Set fixed port
+      - HOST=0.0.0.0
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=https://api.dev.efrait.com:9443
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`dev.efrait.com`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+    command: npm run dev
+    networks:
+      - efrait-network
+
+networks:
+  efrait-network:
+    name: efrait-network
+    external: true

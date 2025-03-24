@@ -62,7 +62,7 @@ export const SAVE_FAMILY_DETAILS_MUTATION = `
  */
 export const GET_FAMILY_DETAILS_QUERY = `
   query GetFamilyDetails($family_id: Int!) {
-    getFamilyDetails(family_id: $family_id) {
+    getFamilyDetails(familyId: $family_id) {
       id
       main_parent_first_name
       main_parent_last_name

@@ -184,11 +184,13 @@ export function FamiliesContent({
 
     const filteredAssessments = selectedFamily
         ? assessments.filter((assessment) => {
-            const assessmentFamilyId =
-                typeof assessment.familyId === 'string' ? parseInt(assessment.familyId, 10) : assessment.familyId;
-
-            const selectedFamilyId =
-                typeof selectedFamily.id === 'string' ? parseInt(selectedFamily.id, 10) : selectedFamily.id;
+            // const assessmentFamilyId =
+            //     typeof assessment.familyId === 'string' ? parseInt(assessment.familyId, 10) : assessment.familyId;
+            //
+            // const selectedFamilyId =
+            //     typeof selectedFamily.id === 'string' ? parseInt(selectedFamily.id, 10) : selectedFamily.id;
+            const assessmentFamilyId = String(assessment.familyId);
+            const selectedFamilyId = String(selectedFamily.id);
 
             return assessmentFamilyId === selectedFamilyId;
         })
