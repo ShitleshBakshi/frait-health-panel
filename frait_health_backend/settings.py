@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     reload: bool = False
 
     # CORS Settings
-    cors_allow_origins: list[str] = ["http://localhost:3000"]
+    cors_allow_origins: list[str] = ["http://localhost:3000", "https://dev.efrait.com:9443"]
 
     # Current environment
     environment: str = "dev"

@@ -6,6 +6,7 @@ class FraiAssessmentModelDTO:
     """Data transfer object for FraiAssessmentModel."""
 
     id: int
+    assessmentid: str
     responsive_parenting: str
     family_health: str
     family_engagement: str
@@ -18,6 +19,7 @@ class FraiAssessmentModelDTO:
 class FraiAssessmentInput:
     """Input type for creating a new Frai assessment."""
 
+    assessmentid: str
     responsive_parenting: str
     family_health: str
     family_engagement: str
@@ -31,6 +33,7 @@ class FraiAssessmentInput:
     """
 
     id: int
+    assessmentid: str
     responsive_parenting: str
     family_health: str
     family_engagement: str

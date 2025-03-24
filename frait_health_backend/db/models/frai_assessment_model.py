@@ -11,6 +11,7 @@ class FraiAssessmentModel(Base):
     __tablename__ = "frai_assessment"
 
     id: Mapped[int] = mapped_column(ForeignKey("initial_families.id"), primary_key=True)
+    assessmentid: Mapped[str] = mapped_column(String(length=200), primary_key=True)
     responsive_parenting: Mapped[str] = mapped_column(String(length=200))
     family_health: Mapped[str] = mapped_column(String(length=200))
     family_engagement: Mapped[str] = mapped_column(String(length=200))

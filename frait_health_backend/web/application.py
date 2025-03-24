@@ -32,7 +32,12 @@ def get_app() -> FastAPI:
     # Add CORS middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000"],
+        allow_origins=["https://dev.efrait.com:9443",
+                       "http://dev.efrait.com:8080",
+                       "http://localhost:3000",
+                       # Add both HTTPS and HTTP variants
+                       "https://dev.efrait.com",
+                       "http://dev.efrait.com",],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

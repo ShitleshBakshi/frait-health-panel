@@ -1,0 +1,112 @@
+version: '3'
+
+services:
+  api: &main_app
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: dev
+    image: frait_health_backend:${FRAIT_HEALTH_BACKEND_VERSION:-dev}
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app/src
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      FRAIT_HEALTH_BACKEND_HOST: 0.0.0.0
+      FRAIT_HEALTH_BACKEND_DB_HOST: frait_health_backend-db
+      FRAIT_HEALTH_BACKEND_DB_PORT: 5432
+      FRAIT_HEALTH_BACKEND_DB_USER: frait_health_backend
+      FRAIT_HEALTH_BACKEND_DB_PASS: frait_health_backend
+      FRAIT_HEALTH_BACKEND_DB_BASE: frait_health_backend
+      FRAIT_HEALTH_BACKEND_REDIS_HOST: frait_health_backend-redis
+      ENVIRONMENT: development
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.dev.efrait.com`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls=true"
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+    networks:
+      - efrait-network
+
+  db:
+    image: postgres:16.3-bullseye
+    hostname: frait_health_backend-db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U frait_health_backend"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: frait_health_backend
+      POSTGRES_PASSWORD: frait_health_backend
+      POSTGRES_DB: frait_health_backend
+    ports:
+      - "5432:5432"
+    volumes:
+      - frait_health_backend-db-data-dev:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - efrait-network
+
+  migrator:
+    image: frait_health_backend:${FRAIT_HEALTH_BACKEND_VERSION:-dev}
+    restart: "no"
+    command: alembic upgrade head
+    volumes:
+      - .:/app/src
+    environment:
+      PYTHONPATH: /app/src
+      FRAIT_HEALTH_BACKEND_HOST: 0.0.0.0
+      FRAIT_HEALTH_BACKEND_DB_HOST: frait_health_backend-db
+      FRAIT_HEALTH_BACKEND_DB_PORT: 5432
+      FRAIT_HEALTH_BACKEND_DB_USER: frait_health_backend
+      FRAIT_HEALTH_BACKEND_DB_PASS: frait_health_backend
+      FRAIT_HEALTH_BACKEND_DB_BASE: frait_health_backend
+      ENVIRONMENT: development
+      FRAIT_HEALTH_BACKEND_PUBLIC_URL: https://api.dev.efrait.com:9443  # Updated port from 8443 to 9443
+      FRAIT_HEALTH_FRONTEND_URL: https://dev.efrait.com:9443           # Updated port from 8443 to 9443
+    healthcheck:
+      test: pg_isready -h frait_health_backend-db -U frait_health_backend
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - efrait-network
+
+  redis:
+    image: bitnami/redis:6.2.5
+    hostname: "frait_health_backend-redis"
+    restart: always
+    environment:
+      ALLOW_EMPTY_PASSWORD: "yes"
+    healthcheck:
+      test: redis-cli ping
+      interval: 1s
+      timeout: 3s
+      retries: 50
+    networks:
+      - efrait-network
+
+volumes:
+  frait_health_backend-db-data-dev:
+    name: frait_health_backend-db-data-dev
+
+networks:
+  efrait-network:
+    name: efrait-network
+    external: true
