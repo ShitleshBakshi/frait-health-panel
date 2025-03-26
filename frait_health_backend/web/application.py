@@ -36,6 +36,7 @@ def get_app() -> FastAPI:
                        "http://dev.efrait.com:8080",
                        "http://localhost:3000",
                        # Add both HTTPS and HTTP variants
+                       "https://dev.efrait.com:8443"
                        "https://dev.efrait.com",
                        "http://dev.efrait.com",],
         allow_credentials=True,
