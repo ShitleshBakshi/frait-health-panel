@@ -27,7 +27,7 @@ export const saveAssessmentToBackend = createAsyncThunk(
                     supportingParentAssessment,
                     childAssessment,
                     externalInfluenceAssessment,
-                    familyId } = state.assessment.currentAssessment;
+                    familyId} = state.assessment.currentAssessment;
 
             if (!familyId) {
                 throw new Error("No family ID available for the assessment");
@@ -53,8 +53,10 @@ export const saveAssessmentToBackend = createAsyncThunk(
             // Step 3: Generate and save FRAI scores using the utility function
             const fraiVariables = generateFraiPayload(
                 familyId,
+                assessmentNumber.toString(),
                 mainParentAssessment,
-                externalInfluenceAssessment
+                externalInfluenceAssessment,
+
             );
 
             const fraiResult = await fetchGraphQL(SAVE_FRAI_ASSESSMENT_MUTATION, fraiVariables);
@@ -129,7 +131,7 @@ export const loadAssessmentFromBackend = createAsyncThunk(
             assessment_35
             assessment_36
           }
-          getFraiAssessment(family_id: $familyId) {
+          getSpecificFraiAssessment(family_id: $familyId, assessment_id: $assessmentId) {
             responsive_parenting
             family_health
             family_engagement
@@ -156,6 +158,46 @@ export const loadAssessmentFromBackend = createAsyncThunk(
             dispatch(setLoading(false));
             dispatch(setError(error instanceof Error ? error.message : "Failed to load assessment"));
             return rejectWithValue(error instanceof Error ? error.message : "Failed to load assessment");
+        }
+    }
+);
+
+/**
+ * Load all FRAI assessments for a family
+ */
+export const loadFraiAssessmentsForFamily = createAsyncThunk(
+    'assessment/loadFraiAssessments',
+    async (familyId: number, { dispatch, rejectWithValue }) => {
+        try {
+            dispatch(setLoading(true));
+
+            const query = `
+                query GetFraiAssessments($familyId: Int!) {
+                    getFraiAssessmentsByFamily(family_id: $familyId) {
+                        id
+                        assessmentid
+                        responsive_parenting
+                        family_health
+                        family_engagement
+                        family_support
+                        socio_economic
+                        overall_score
+                    }
+                }
+            `;
+
+            const result = await fetchGraphQL(query, { familyId });
+
+            if (!result.getFraiAssessmentsByFamily) {
+                throw new Error("Failed to load FRAI assessments");
+            }
+
+            dispatch(setLoading(false));
+            return result.getFraiAssessmentsByFamily;
+        } catch (error) {
+            dispatch(setLoading(false));
+            dispatch(setError(error instanceof Error ? error.message : "Failed to load FRAI assessments"));
+            return rejectWithValue(error instanceof Error ? error.message : "Failed to load FRAI assessments");
         }
     }
 );

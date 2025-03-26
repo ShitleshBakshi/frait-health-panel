@@ -15,7 +15,7 @@ const MOCK_HEALTH_VISITORS = [
         assignedFamilies: [
             { id: "fam_1", name: "Smith", assessmentStatus: "Done" },
             { id: "fam_2", name: "Williams", assessmentStatus: "In Progress" },
-            { id: "fam_3", name: "Brown", assessmentStatus: "Pending" }
+            { id: "fam_3", name: "Brown", assessmentStatus: "Asst HV" }
         ]
     },
     {
@@ -31,8 +31,8 @@ const MOCK_HEALTH_VISITORS = [
         name: "Dr. Emily Davis",
         assignedFamilies: [
             { id: "fam_6", name: "Taylor", assessmentStatus: "In Progress" },
-            { id: "fam_7", name: "Moore", assessmentStatus: "Pending" },
-            { id: "fam_8", name: "Anderson", assessmentStatus: "Pending" },
+            { id: "fam_7", name: "Moore", assessmentStatus: "Asst HV" },
+            { id: "fam_8", name: "Anderson", assessmentStatus: "Asst HV" },
             { id: "fam_9", name: "Thomas", assessmentStatus: "Done" }
         ]
     }
@@ -69,7 +69,7 @@ export function HealthVisitorSearch() {
         healthVisitor.assignedFamilies.forEach(family => {
             if (family.assessmentStatus === "Done") counts.done++
             else if (family.assessmentStatus === "In Progress") counts.inProgress++
-            else if (family.assessmentStatus === "Pending") counts.pending++
+            else if (family.assessmentStatus === "Asst HV") counts.pending++
         })
 
         return counts
@@ -120,7 +120,7 @@ export function HealthVisitorSearch() {
                                                     <p className="text-2xl font-bold text-blue-700">{counts.inProgress}</p>
                                                 </div>
                                                 <div className="bg-yellow-50 p-3 rounded-md border border-yellow-100">
-                                                    <p className="text-sm text-yellow-700">Pending</p>
+                                                    <p className="text-sm text-yellow-700">Asst HV</p>
                                                     <p className="text-2xl font-bold text-yellow-700">{counts.pending}</p>
                                                 </div>
                                             </div>

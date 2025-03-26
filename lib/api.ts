@@ -28,7 +28,8 @@ export async function fetchGraphQL(
             body: JSON.stringify({
                 query,
                 variables
-            })
+            }),
+            credentials: 'include'
         });
 
         const json = await response.json();
@@ -130,27 +131,50 @@ export const SAVE_FRAI_ASSESSMENT_MUTATION = `
 `;
 
 /**
- * Helper function to dynamically generate a FRAT assessment mutation
- * This is an alternative to the static mutation above, useful for testing or dynamic use cases
+ * Fetch assessments for a specific family with specific assessment ID
+ * @param familyId The ID of the family to fetch assessment data for
+ * @param assessmentId The ID of the specific assessment
  */
-export function buildFratAssessmentMutation() {
-    // Generate parameter list for 36 assessment fields
-    const params = [];
-    const variables = [];
-
-    for (let i = 1; i <= 36; i++) {
-        params.push(`$assessment${i}: String!`);
-        variables.push(`assessment_${i}: $assessment${i}`);
-    }
-
-    return `
-    mutation CreateFratAssessment($id: Int!, ${params.join(', ')}) {
-      createFratAssessment(
-        id: $id, 
-        ${variables.join(', ')}
-      )
+export async function fetchSpecificFraiAssessment(familyId: number, assessmentId: string) {
+    const QUERY = `
+    query GetSpecificFraiAssessment($familyId: Int!, $assessmentId: String!) {
+      getSpecificFraiAssessment(family_id: $familyId, assessment_id: $assessmentId) {
+        id
+        assessmentid
+        responsive_parenting
+        family_health
+        family_engagement
+        family_support
+        socio_economic
+        overall_score
+      }
     }
   `;
+
+    return fetchGraphQL(QUERY, { familyId, assessmentId });
+}
+
+/**
+ * Fetch all FRAI assessments for a specific family
+ * @param familyId The ID of the family to fetch assessment data for
+ */
+export async function fetchFamilyFraiAssessments(familyId: number) {
+    const QUERY = `
+    query GetFamilyFraiAssessments($familyId: Int!) {
+      getFraiAssessmentsByFamily(family_id: $familyId) {
+        id
+        assessmentid
+        responsive_parenting
+        family_health
+        family_engagement
+        family_support
+        socio_economic
+        overall_score
+      }
+    }
+  `;
+
+    return fetchGraphQL(QUERY, { familyId });
 }
 
 /**

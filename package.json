@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev2": "PORT=$(shuf -i 8010-8999 -n 1) && next dev -H 0.0.0.0 -p $PORT",
     "dev": "next dev -H 0.0.0.0 -p 3000",
+    "dev2": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
-    "start": "PORT=$(shuf -i 8010-8999 -n 1) && next start -H 0.0.0.0 -p $PORT",
+    "start": "next start -H 0.0.0.0 -p 8050",
     "lint": "next lint"
   },
   "dependencies": {

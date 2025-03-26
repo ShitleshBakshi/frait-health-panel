@@ -159,9 +159,9 @@ export function generateFratPayload(
  */
 export function generateFraiPayload(
     familyId: number | string,
+    assessmentId: string,
     mainParentAssessment: AssessmentItem[],
-    externalInfluenceAssessment: AssessmentItem[],
-    assessmentNumber: number
+    externalInfluenceAssessment: AssessmentItem[]
 ): Record<string, any> {
     const partialState: Partial<RootState> = {
         assessment: {
@@ -187,7 +187,7 @@ export function generateFraiPayload(
     return {
         fraiInput: {
             id: parseInt(String(familyId), 10),
-            assessmentid: assessmentNumber.toString(),
+            assessmentid: assessmentId.toString(),
             responsiveParenting: categoryScores["responsive-parenting"].toString(),
             familyHealth: categoryScores["family-health"].toString(),
             familyEngagement: categoryScores["engagement"].toString(),

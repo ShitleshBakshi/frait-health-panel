@@ -138,6 +138,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
 
 
     const [fraiDialogOpen, setFraiDialogOpen] = useState(false)
+    const [assessmenttimelineopen, setassessmenttimelineopen] = useState(false)
 
     const assessmentData = useSelector((state: RootState) =>
         assessmentId ? state.family.assessments.find(a => a.id === String(assessmentId)) : null
@@ -499,6 +500,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                 updatedAt: currentTime
             }
 
+            console.log("Adding family")
             // Save to Redux family slice
             dispatch(addFamilyAssessment(familyAssessment))
 
@@ -510,9 +512,12 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
 
             dispatch(resetAssessment())
 
-            setTimeout(() => {
-                router.push(`/families/${familyId}`);
-            }, 2000);
+
+            router.push(`/families/${familyId}`);
+
+            // setTimeout(() => {
+            //     window.location.href = `/families/${familyId}`;
+            // }, 500);
         }
         catch (error) {
             toast({
@@ -533,7 +538,8 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                     <span className="text-blue-600 font-medium">Family: {family?.name || "Unknown"}</span>
                 </div>
 
-                <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-700">
+                <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-100"
+                     onClick={() => setassessmenttimelineopen(true)}>
                     <Clock className="h-5 w-5 text-gray-600" />
                     <span className="text-gray-600">View the assessment timeline</span>
                 </div>
@@ -562,15 +568,6 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                                         <span className="text-blue-600">{`${mainParentInfo?.firstName} ${mainParentInfo?.lastName}`}</span>
                                         <span className="text-gray-500">({mainParentInfo?.dateOfBirth})</span>
                                     </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                        onClick={() => setMainParentAssessmentOpen(true)}
-                                    >
-                                        <Eye className="h-4 w-4 mr-1" />
-                                        View Assessment
-                                    </Button>
                                 </div>
                             </div>
                         </AccordionContent>
@@ -593,18 +590,6 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                                                 <span className="text-blue-600">{`${parent.firstName} ${parent.lastName}`}</span>
                                                 <span className="text-gray-500">({parent.dateOfBirth})</span>
                                             </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                onClick={() => {
-                                                    setSelectedSupportingParentId(parent.id)
-                                                    setSupportingParentAssessmentOpen(true)
-                                                }}
-                                            >
-                                                <Eye className="h-4 w-4 mr-1" />
-                                                View Assessment
-                                            </Button>
                                         </div>
                                     ))
                                 ) : (
@@ -628,15 +613,6 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                                     <div className="flex items-center gap-2">
                                         <span className="text-blue-600">{`${mainParentInfo?.firstName} ${mainParentInfo?.lastName}`}</span>
                                     </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                        onClick={() => setExternalInfluenceAssessmentOpen(true)}
-                                    >
-                                        <Eye className="h-4 w-4 mr-1" />
-                                        View Assessment
-                                    </Button>
                                 </div>
                             </div>
                         </AccordionContent>
@@ -652,14 +628,6 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pt-2 pb-4">
                             <div className="space-y-4">
-                                <FormField label="Every child has the same supporting parent(s)">
-                                    <Switch
-                                        checked={sameParentsForAllChildren}
-                                        onCheckedChange={setSameParentsForAllChildren}
-                                        name="sameParentsForAllChildren"
-                                    />
-                                </FormField>
-
                                 {childrenInfo.length > 0 ? (
                                     childrenInfo.map((child) => (
                                         <div key={child.id} className="flex items-center justify-between">
@@ -667,18 +635,6 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                                                 <span className="text-blue-600">{`${child.firstName} ${child.lastName}`}</span>
                                                 <span className="text-gray-500">({child.dateOfBirth})</span>
                                             </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                onClick={() => {
-                                                    setSelectedChildId(child.id)
-                                                    setChildAssessmentOpen(true)
-                                                }}
-                                            >
-                                                <Eye className="h-4 w-4 mr-1" />
-                                                View Assessment
-                                            </Button>
                                         </div>
                                     ))
                                 ) : (
@@ -688,6 +644,54 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                         </AccordionContent>
                     </AccordionItem>
                 </Accordion>
+
+                <Dialog open={assessmenttimelineopen} onOpenChange={setassessmenttimelineopen}>
+                    <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Assessment timeline</DialogTitle>
+                        </DialogHeader>
+                        <div className="relative pl-6 mt-4">
+                            {/* Timeline line */}
+                            <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-gray-200"></div>
+
+                            {/* First timeline item - Initialised */}
+                            <div className="relative mb-8">
+                                <div className="absolute left-[-1.25rem] mt-1.5 w-3 h-3 rounded-full bg-blue-600"></div>
+                                <div>
+                                    <p className="font-medium">Initialised at:</p>
+                                    <p className="text-gray-500 mt-1">
+                                        {assessmentData ? new Date(assessmentData.createdAt).toLocaleString('en-GB', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            second: '2-digit'
+                                        }).replace(',', '') : '20-10-2022 14:44:37'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Second timeline item - Finalised */}
+                            <div className="relative">
+                                <div className="absolute left-[-1.25rem] mt-1.5 w-3 h-3 rounded-full bg-blue-600"></div>
+                                <div>
+                                    <p className="font-medium">Finalised at:</p>
+                                    <p className="text-gray-500 mt-1">
+                                        {assessmentData ? new Date(assessmentData.updatedAt).toLocaleString('en-GB', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            second: '2-digit'
+                                        }).replace(',', '') : '20-10-2022 14:49:54'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
 
                 <Dialog open={fraiDialogOpen} onOpenChange={setFraiDialogOpen}>
                     <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">

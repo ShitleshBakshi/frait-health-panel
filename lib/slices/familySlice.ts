@@ -180,7 +180,11 @@ const familySlice = createSlice({
             state.currentFamilyId = action.payload;
         },
         addFamilyAssessment: (state, action: PayloadAction<FamilyAssessment>) => {
-            const exists = state.assessments.some(a => a.id === action.payload.id);
+            const exists = state.assessments.some(
+                a => a.familyId === action.payload.familyId &&
+                    a.id === action.payload.id
+            );
+
             if (!exists) {
                 state.assessments.unshift(action.payload);
             }
@@ -188,7 +192,7 @@ const familySlice = createSlice({
 
         updateFamilyAssessment: (state, action: PayloadAction<FamilyAssessment>) => {
             const index = state.assessments.findIndex(
-                (assessment) => assessment.id === action.payload.id
+                (assessment) => assessment.familyId === action.payload.familyId && assessment.id === action.payload.id
             )
             if (index !== -1) {
                 state.assessments[index] = action.payload
