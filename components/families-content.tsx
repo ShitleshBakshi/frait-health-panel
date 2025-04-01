@@ -45,19 +45,28 @@ export function FamiliesContent({
     const error = useSelector((state: RootState) => state.family.error)
 
     // Filter families based on role and search term
-    const filteredFamilies = families.filter((family) =>{
+    const filteredFamilies = families.filter((family) => {
         if (!family || !family.name) return false;
+
+        // Apply search term filtering for all roles
+        const matchesSearch = family.name.toLowerCase().includes(searchTerm.toLowerCase());
+        if (!matchesSearch) return false;
+
         // For Assistant Health Visitors, only show assigned families
         if (user?.role === "Assistant Health Visitor") {
+
             const assignedFamilies = getAssignedFamilies()
-            if (!assignedFamilies.includes(family.id.toString())) {
-                return false
-            }
+            return assignedFamilies.includes(family.id.toString());
+            // return isAssignedFamily(family.id.toString());
+
         }
 
-        return family && family.name ?
-            family.name.toLowerCase().includes(searchTerm.toLowerCase()) :
-            false})
+        return true;
+    });
+    useEffect(() => {
+        console.log("User role:", user?.role);
+        console.log("Assigned families:", getAssignedFamilies());
+    }, [user?.role]);
 
     const handleFamilySelect = (family: Family) => {
         setSelectedFamily(family)
@@ -141,37 +150,6 @@ export function FamiliesContent({
         }
     }
 
-    // Handler for importing families from Excel
-    const handleExcelUpload = async (familiesData: any[]) => {
-        try {
-            await dispatch(addFamiliesBulk(familiesData)).unwrap()
-            toast({
-                title: "Success",
-                description: `${familiesData.length} families imported successfully`
-            })
-            setNewFamilyFormOpen(false)
-        } catch (error) {
-            toast({
-                title: "Error",
-                description: error as string,
-                variant: "destructive"
-            })
-        }
-    }
-
-    // const handleExcelUpload = (familiesData: any[]) => {
-    //     // Process the data and assign unique IDs
-    //     const newFamilies: Family[] = familiesData.map(data => ({
-    //         id: `excel-${Date.now()}-${Math.floor(Math.random() * 1000)}`, // Generate a unique ID
-    //         name: data.name,
-    //         nhsNumber: data.nhsNumber,
-    //         childDob: data.childDob,
-    //         updatedAt: data.updatedAt
-    //     }));
-    //
-    //     dispatch(addFamilies(newFamilies));
-    //     setNewFamilyFormOpen(false);
-    // };
 
     // Handle refresh button click
     const handleRefresh = () => {
@@ -289,23 +267,15 @@ export function FamiliesContent({
                                 <UserPlus className="mr-2 h-4 w-4" /> Assign Family
                             </Button>
                         )}
-                        <Button
-                            onClick={() => setNewFamilyFormOpen(true)}
-                            className="bg-blue-600 hover:bg-blue-700"
-                        >
-                            <Plus className="mr-2 h-4 w-4" /> New Family
-                        </Button>
 
-                        {/* Add Assign button for Health Visitors */}
-                        {user?.role === "Health Visitor" && selectedFamily && (
+                        {user?.role === "Health Visitor" && (
                             <Button
-                                onClick={() => setAssignFamilyModalOpen(true)}
+                                onClick={() => setNewFamilyFormOpen(true)}
                                 className="bg-blue-600 hover:bg-blue-700"
                             >
-                                <UserPlus className="mr-2 h-4 w-4" /> Assign
+                                <Plus className="mr-2 h-4 w-4" /> New Family
                             </Button>
-                        )}
-
+                            )}
                     </div>
 
                     {/* Error alert if there's an error from Redux */}
@@ -506,7 +476,6 @@ export function FamiliesContent({
                 open={newFamilyFormOpen}
                 onClose={() => setNewFamilyFormOpen(false)}
                 onSubmit={handleAddFamily}
-                onExcelUpload={handleExcelUpload}
             />
             <FamilyAssignmentModal
                 open={assignFamilyModalOpen}

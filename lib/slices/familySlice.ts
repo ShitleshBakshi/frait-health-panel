@@ -114,8 +114,8 @@ export const addFamily = createAsyncThunk(
             const backendInput: FamilyGraphQLInput = {
                 id: nextId, // Use the next ID from state
                 familyName: familyInput.name,
-                nhsNumber: familyInput.nhsNumber || "UNKNOWN",
-                childDob: familyInput.childDob
+                nhsNumber: familyInput.nhsNumber || "Not Provided",
+                childDob: familyInput.childDob || "Not Provided"
             };
 
             console.log("Sending to backend:", backendInput); // Debug log

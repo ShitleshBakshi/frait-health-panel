@@ -10,7 +10,8 @@ import {
     clearUser,
     assignFamilyToAssistant,
     addPendingAssessment as addPendingAssessmentAction,
-    removeAssessment
+    removeAssessment,
+    FIXED_ASSISTANT_ID
 } from "@/lib/slices/userSlice"
 
 // Define the User Role type for the application
@@ -25,33 +26,6 @@ export type User = {
     // For Assistant Health Visitors, track their assigned families
     assignedFamilies?: string[]
 }
-
-// // Create a Redux slice for user state - incorporated from userSlice.ts
-// export const userSlice = createSlice({
-//     name: "user",
-//     initialState: {
-//         id: "",
-//         username: "",
-//         role: "Assistant Health Visitor" as UserRole,
-//         healthBoard: "",
-//     },
-//     reducers: {
-//         setUser: (state, action: PayloadAction<{
-//             id: string;
-//             username: string;
-//             role: UserRole;
-//             healthBoard: string;
-//         }>) => {
-//             return { ...state, ...action.payload }
-//         },
-//         clearUser: (state) => {
-//             state.id = ""
-//             state.username = ""
-//             state.role = "Assistant Health Visitor"
-//             state.healthBoard = ""
-//         },
-//     },
-// })
 
 
 // Define the interface for auth context
@@ -91,6 +65,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         healthBoard: reduxUser.healthBoard
     } : null;
 
+    const ASSISTANT_USERNAME = "Sarah Johnson"
+
     const selectRole = async (role: string): Promise<User> => {
         const roleMap: Record<string, UserRole> = {
             "Health Visitor": "Health Visitor",
@@ -103,8 +79,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             throw new Error("Invalid role selected")
         }
 
-        // Generate a random ID for the user
-        const userId = `user_${Math.floor(Math.random() * 10000)}`
+        // Use fixed ID for Assistant Health Visitor
+        let userId: string;
+        let username: string;
+
+        if (role === "Assistant Health Visitor") {
+            userId = FIXED_ASSISTANT_ID;
+            username = ASSISTANT_USERNAME;
+        } else {
+            // Generate random ID for other roles
+            userId = `user_${Math.floor(Math.random() * 10000)}`;
+            username = `Example ${role}`;
+        }
 
         const newUser: User = {
             id: userId,
@@ -141,19 +127,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (user.role !== "Assistant Health Visitor") return true
 
         // For Assistant Health Visitors, check if this family is assigned
-        return reduxUser.assignedFamilies[user.id]?.includes(familyId) || false
+        return !!reduxUser.assignedFamilies[FIXED_ASSISTANT_ID]?.includes(familyId);
+
     }
 
     const getAssignedFamilies = () => {
-        if (!user) return []
-
-        // Assistant Health Visitors only see their assigned families
-        if (user.role === "Assistant Health Visitor") {
-            return reduxUser.assignedFamilies[user.id] || []
-        }
+        // if (!user) return [];
+        //
+        // // Assistant Health Visitors only see their assigned families
+        // if (user.role === "Assistant Health Visitor") {
+        //     // Get only families assigned to the CURRENT Assistant Health Visitor
+        //     const currentUserAssignments = reduxUser.assignedFamilies[user.id] || [];
+        //
+        //     // Make sure we're returning an array
+        //     return Array.isArray(currentUserAssignments)
+        //         ? currentUserAssignments
+        //         : [];
+        // }
 
         // Others can see all families
-        return []
+        return reduxUser.assignedFamilies[FIXED_ASSISTANT_ID] || [];
     }
 
     // Assessment approval functions using Redux
@@ -179,6 +172,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             assistantId: user.id
         }))
     }
+
+    useEffect(() => {
+    }, [reduxUser.assignedFamilies, user?.id]);
 
     return (
         <AuthContext.Provider

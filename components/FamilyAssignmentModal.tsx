@@ -38,7 +38,7 @@ export function FamilyAssignmentModal({
     // Get all users from redux state - in a real app, this would be filtered by role in the backend
     // For now, we'll use mock data for Assistant Health Visitors
     const assistantHealthVisitors = [
-        { id: "asst_1", username: "Assistant Smith", role: "Assistant Health Visitor" },
+        { id: "user2", username: "Assistant Smith", role: "Assistant Health Visitor" },
         { id: "asst_2", username: "Assistant Johnson", role: "Assistant Health Visitor" },
         { id: "asst_3", username: "Assistant Williams", role: "Assistant Health Visitor" },
     ];

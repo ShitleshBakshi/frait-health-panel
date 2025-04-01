@@ -1,4 +1,4 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
+import {createAction, createSlice, type PayloadAction} from "@reduxjs/toolkit"
 import { UserRole } from "@/lib/auth-context"
 
 interface PendingAssessment {
@@ -6,6 +6,8 @@ interface PendingAssessment {
     familyId: string
     assistantId: string
 }
+
+export const FIXED_ASSISTANT_ID = "user2";
 
 interface UserState {
     id: string
@@ -21,7 +23,9 @@ const initialState: UserState = {
     username: "",
     role: "Assistant Health Visitor" as UserRole,
     healthBoard: "",
-    assignedFamilies: {},
+    assignedFamilies: {
+        [FIXED_ASSISTANT_ID]: []
+    },
     pendingAssessments: []
 }
 
@@ -41,14 +45,23 @@ const userSlice = createSlice({
             state.healthBoard = action.payload.healthBoard
         },
         clearUser: (state) => {
-            return initialState
+            // Store the current assigned families
+            const preservedAssignments = { ...state.assignedFamilies };
+
+            // Reset the state to initial values
+            Object.assign(state, initialState);
+
+            // Restore the preserved family assignments
+            state.assignedFamilies = preservedAssignments;
         },
         // Add action to assign a family to an assistant
         assignFamilyToAssistant: (state, action: PayloadAction<{
             familyId: string;
             assistantId: string;
         }>) => {
-            const { familyId, assistantId } = action.payload
+            const { familyId } = action.payload
+
+            const assistantId = FIXED_ASSISTANT_ID
 
             // Initialize the array if it doesn't exist
             if (!state.assignedFamilies[assistantId]) {
@@ -80,6 +93,7 @@ const userSlice = createSlice({
         }
     },
 })
+
 
 export const {
     setUser,

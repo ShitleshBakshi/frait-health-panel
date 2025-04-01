@@ -12,38 +12,70 @@ import { calculateCategoryScores, calculateOverallScore } from "@/lib/assessment
 // Print styles for the FRAT report
 const printStyles = `
 @media print {
-  header, nav, button, .no-print {.
+  /* Hide UI elements not needed for printing */
+  header, nav, button, .no-print {
     display: none !important;
   }
-  body {
-    background-color: white;
-    margin: 0;
-    padding: 0;
+  
+  /* Hide sidebar completely */
+  aside, .sidebar, [data-sidebar="sidebar"], nav[aria-label="Sidebar"] {
+    display: none !important;
   }
+  
+  /* Hide any sidebar container */
+  .flex > *:first-child:not(main) {
+    display: none !important;
+  }
+  
+  /* Make the main content take full width */
+  body {
+    background-color: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
   main {
     padding: 0 !important;
     margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
     background-color: white !important;
   }
+  
+  /* Make sure the report is centered */
+  .flex-1 {
+    width: 100% !important;
+  }
+  
+  /* Table formatting */
   table {
     page-break-inside: avoid;
     border-collapse: collapse;
     width: 100%;
   }
+  
   th, td {
     border: 1px solid #ddd;
   }
+  
+  /* Preserve highlighting colors in print */
   .bg-blue-100 {
     background-color: #dbeafe !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    color-adjust: exact;
   }
+  
+  /* Page breaks for sections */
   h2 {
     page-break-before: always;
   }
+  
   .section {
     page-break-inside: avoid;
   }
+  
   .section:first-child h2 {
     page-break-before: avoid;
   }
@@ -72,58 +104,59 @@ const sectionAItems: SectionItem[] = [
 
 // Section B: Supporting Parent/Carer items
 const sectionBItems: SectionItem[] = [
-    { id: 7, title: "Supporting Parent/Carer's physical health" },
-    { id: 8, title: "Supporting Parent/Carer is depressed/has mental health issues" },
-    { id: 9, title: "Supporting Parent/Carer's lifestyle factors" },
-    { id: 10, title: "Supporting Parent/Carer's experience of good parenting as a child" },
-    { id: 11, title: "Supporting Parent/Carer's experience of being a parent" },
-    { id: 12, title: "History of domestic abuse" }
+    { id: 1, title: "Supporting Parent/Carer's physical health" },
+    { id: 2, title: "Supporting Parent/Carer is depressed/has mental health issues" },
+    { id: 3, title: "Supporting Parent/Carer's lifestyle factors" },
+    { id: 4, title: "Supporting Parent/Carer's experience of good parenting as a child" },
+    { id: 5, title: "Supporting Parent/Carer's experience of being a parent" },
+    { id: 6, title: "History of domestic abuse" }
 ];
 
 // Section C: External influence items
 const sectionCItems: SectionItem[] = [
-    { id: 13, title: "Parental age younger than 18 years" },
-    { id: 14, title: "Number of children/young people in the household" },
-    { id: 15, title: "Adequate housing" },
-    { id: 16, title: "Family struggling to manage their finances" },
-    { id: 17, title: "Family isolated due to cultural differences" },
-    { id: 18, title: "Family access to extended family support" },
-    { id: 19, title: "Family access to local charities" },
-    { id: 20, title: "Family's ability to cope with stress" },
-    { id: 21, title: "Family's ability to recognise problems/circumstances that need to change" },
-    { id: 22, title: "Family not wanting to change when there are concerns" },
-    { id: 23, title: "Family's ability to make decisions to change" },
-    { id: 24, title: "Family's control over life events" },
-    { id: 25, title: "Family values & beliefs affecting family health" },
-    { id: 26, title: "Family basic standard of education" },
-    { id: 27, title: "Family engagement with services" }
+    { id: 1, title: "Parental age younger than 18 years" },
+    { id: 2, title: "Number of children/young people in the household" },
+    { id: 3, title: "Adequate housing" },
+    { id: 4, title: "Family struggling to manage their finances" },
+    { id: 5, title: "Family isolated due to cultural differences" },
+    { id: 6, title: "Family access to extended family support" },
+    { id: 7, title: "Family access to local charities" },
+    { id: 8, title: "Family's ability to cope with stress" },
+    { id: 9, title: "Family's ability to recognise problems/circumstances that need to change" },
+    { id: 10, title: "Family not wanting to change when there are concerns" },
+    { id: 11, title: "Family's ability to make decisions to change" },
+    { id: 12, title: "Family's control over life events" },
+    { id: 13, title: "Family values & beliefs affecting family health" },
+    { id: 14, title: "Family basic standard of education" },
+    { id: 15, title: "Family engagement with services" }
 ];
 
 // Section D: Child's health and well-being items
 const sectionDItems: SectionItem[] = [
-    { id: 28, title: "Child's physical health" },
-    { id: 29, title: "Family not attending appointments" },
-    { id: 30, title: "Child's education/learning needs being met" },
-    { id: 31, title: "Child's emotional development" },
-    { id: 32, title: "Family tension causing stress within family" },
-    { id: 33, title: "Parents' ability to provide for all physical needs" },
-    { id: 34, title: "Child's feeding/eating well" },
-    { id: 35, title: "Parents' awareness of the need to protect the child from harm in the home/elsewhere" },
-    { id: 36, title: "Frequent attendance at Emergency Department(s)" }
+    { id: 1, title: "Child's physical health" },
+    { id: 2, title: "Family not attending appointments" },
+    { id: 3, title: "Child's education/learning needs being met" },
+    { id: 4, title: "Child's emotional development" },
+    { id: 5, title: "Family tension causing stress within family" },
+    { id: 6, title: "Parents' ability to provide for all physical needs" },
+    { id: 7, title: "Child's feeding/eating well" },
+    { id: 8, title: "Parents' awareness of the need to protect the child from harm in the home/elsewhere" },
+    { id: 9, title: "Frequent attendance at Emergency Department(s)" }
 ];
 
 // Assessment level labels
 const assessmentLevels = ["No concern", "Low", "Low/Med", "Med", "Med/High", "High"];
+
+// Assessment levels as they exist in the data model
+const assessmentLevelValues: AssessmentLevel[] = ["no-concern", "low", "low-med", "med", "med-high", "high"];
 
 export default function FRATReport({ assessmentId, familyId }: FRATReportProps) {
     const router = useRouter();
     const assessment = useSelector((state: RootState) =>
         state.family.assessments.find(a => a.id === assessmentId)
     ) as FamilyAssessment | undefined;
+    const families = useSelector((state: RootState) => state.family.families.find(a=>a.id === familyId))
 
-
-    const scores = useSelector((state: RootState) => calculateCategoryScores(state));
-    const overallScore = calculateOverallScore(scores);
 
     if (!assessment) {
         return (
@@ -152,49 +185,45 @@ export default function FRATReport({ assessmentId, familyId }: FRATReportProps) 
         supportingParents,
         children,
         mainParentAssessment,
+        supportingParentAssessment,
+        childAssessment,
         externalInfluenceAssessment,
         assessorHv,
         createdAt
     } = assessment;
 
+
     const child = children.length > 0 ? children[0] : null;
     const supportingParent = supportingParents.length > 0 ? supportingParents[0] : null;
 
-    // Function to get assessment level for an item
-    const getAssessmentLevel = (collection: any[], itemId: number): AssessmentLevel | null => {
-        const item = collection.find(item => item.id === itemId);
-        return item?.level || null;
-    };
 
-    // Function to format assessment level text
-    const formatLevel = (level: AssessmentLevel | null): string => {
-        if (!level) return '';
-        return level.split('-')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join('/');
-    };
+    // Helper function to check if an assessment item has a specific level
+    const matchesLevel = (assessmentItem: any, levelIndex: number): boolean => {
+        if (!assessmentItem || !assessmentItem.level) return false;
 
-    // Function to check if an item has a specific level
-    const hasLevel = (collection: any[], itemId: number, level: string): boolean => {
-        const itemLevel = getAssessmentLevel(collection, itemId);
-        if (!itemLevel) return false;
-        return formatLevel(itemLevel).toLowerCase() === level.toLowerCase();
+        // Compare the item's level with the corresponding level in our ordered array
+        return assessmentItem.level === assessmentLevelValues[levelIndex];
     };
 
     // Component to render an assessment table row
-    const AssessmentRow = ({ item, collection }: { item: SectionItem, collection: any[] }) => (
-        <tr className="border-t">
-            <td className="px-4 py-2">{item.id}. {item.title}</td>
-            {assessmentLevels.map(level => (
-                <td
-                    key={`${item.id}-${level}`}
-                    className={`px-4 py-2 text-center ${hasLevel(collection, item.id, level) ? 'bg-blue-100' : ''}`}
-                >
-                    {hasLevel(collection, item.id, level) && '✓'}
-                </td>
-            ))}
-        </tr>
-    );
+    const AssessmentRow = ({ item, collection }: { item: SectionItem, collection: any[] }) => {
+
+        const assessmentItem = collection.find(a => a.id === item.id);
+        return (
+
+            <tr className="border-t">
+                <td className="px-4 py-2">{item.id}. {item.title}</td>
+                {assessmentLevels.map((_, index) => (
+                    <td
+                        key={`${item.id}-${index}`}
+                        className={`px-4 py-2 text-center ${matchesLevel(assessmentItem, index) ? 'bg-blue-100' : ''}`}
+                    >
+                        {matchesLevel(assessmentItem, index) && '✓'}
+                    </td>
+                ))}
+            </tr>
+        );
+    };
 
     // Component to render an assessment table
     const AssessmentTable = ({ items, collection }: { items: SectionItem[], collection: any[] }) => (
@@ -216,6 +245,36 @@ export default function FRATReport({ assessmentId, familyId }: FRATReportProps) 
             </table>
         </div>
     );
+
+    // Helper function to calculate age from DOB
+    const calculateAge = (dob: string): number => {
+        if (!dob) return 0;
+
+        // Parse the DOB in format dd/mm/yyyy
+        const parts = dob.split('/');
+        if (parts.length !== 3) return 0;
+
+        const birthDate = new Date(
+            parseInt(parts[2], 10),
+            parseInt(parts[1], 10) - 1, // Month is 0-indexed
+            parseInt(parts[0], 10)
+        );
+
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+
+        return age;
+    };
+
+    // Helper function to check if a relationship matches
+    const isRelationship = (relation: string, value: string): boolean => {
+        return relation === value;
+    };
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -249,7 +308,7 @@ export default function FRATReport({ assessmentId, familyId }: FRATReportProps) 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <p className="text-sm text-gray-600">Name of Family Assessed:</p>
-                                        <p className="font-medium">{mainParent.lastName}</p>
+                                        <p className="font-medium">{families?.name}</p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Health Visitor completing assessment:</p>
@@ -272,36 +331,40 @@ export default function FRATReport({ assessmentId, familyId }: FRATReportProps) 
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">M/F:</p>
-                                        <p className="font-medium">F</p> {/* Default to F for demonstration */}
+                                        <p className="font-medium">
+                                            {mainParent.gender === 'male' ? 'M' :
+                                                mainParent.gender === 'female' ? 'F' :
+                                                    mainParent.gender}
+                                        </p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Parental Responsibility:</p>
-                                        <p className="font-medium">Y</p> {/* Default to Y for demonstration */}
+                                        <p className="font-medium">{mainParent.parentalResponsibility ? 'Y' : 'N'}</p>
                                     </div>
                                 </div>
 
                                 <div className="mb-4">
                                     <p className="text-sm text-gray-600 mb-2">Relationship to Named Child:</p>
                                     <div className="grid grid-cols-4 gap-2 border rounded-md p-2">
-                                        <div className="border p-2 rounded-md font-medium bg-blue-50">
+                                        <div className={`border p-2 rounded-md ${isRelationship(mainParent.relationToChild, 'birth-mother') ? 'font-medium bg-blue-50' : ''}`}>
                                             <p>Birth Mother</p>
                                         </div>
-                                        <div className="border p-2 rounded-md">
+                                        <div className={`border p-2 rounded-md ${isRelationship(mainParent.relationToChild, 'adoptive-mother') ? 'font-medium bg-blue-50' : ''}`}>
                                             <p>Adoptive Mother</p>
                                         </div>
-                                        <div className="border p-2 rounded-md">
+                                        <div className={`border p-2 rounded-md ${isRelationship(mainParent.relationToChild, 'step-mother') ? 'font-medium bg-blue-50' : ''}`}>
                                             <p>Step Mother</p>
                                         </div>
-                                        <div className="border p-2 rounded-md">
+                                        <div className={`border p-2 rounded-md ${isRelationship(mainParent.relationToChild, 'other') ? 'font-medium bg-blue-50' : ''}`}>
                                             <p>Other family member</p>
                                         </div>
-                                        <div className="border p-2 rounded-md">
+                                        <div className={`border p-2 rounded-md ${isRelationship(mainParent.relationToChild, 'birth-father') ? 'font-medium bg-blue-50' : ''}`}>
                                             <p>Birth Father</p>
                                         </div>
-                                        <div className="border p-2 rounded-md">
+                                        <div className={`border p-2 rounded-md ${isRelationship(mainParent.relationToChild, 'adoptive-father') ? 'font-medium bg-blue-50' : ''}`}>
                                             <p>Adoptive Father</p>
                                         </div>
-                                        <div className="border p-2 rounded-md">
+                                        <div className={`border p-2 rounded-md ${isRelationship(mainParent.relationToChild, 'step-father') ? 'font-medium bg-blue-50' : ''}`}>
                                             <p>Step Father</p>
                                         </div>
                                     </div>
@@ -310,29 +373,29 @@ export default function FRATReport({ assessmentId, familyId }: FRATReportProps) 
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     <div>
                                         <p className="text-sm text-gray-600">Main Parent/Carer's Age:</p>
-                                        <p className="font-medium">35</p> {/* Placeholder age */}
+                                        <p className="font-medium">{calculateAge(mainParent.dateOfBirth)}</p>
                                     </div>
                                 </div>
 
                                 <div className="mb-4">
                                     <p className="text-sm text-gray-600 mb-2">Educational qualification level:</p>
                                     <div className="grid grid-cols-6 gap-2 border rounded-md p-2">
-                                        <div className="border p-2 rounded-md">
+                                        <div className={`border p-2 rounded-md ${mainParent.educationLevel === 'None' ? 'font-medium bg-blue-50' : ''}`}>
                                             <p>No qualifications</p>
                                         </div>
-                                        <div className="border p-2 rounded-md">
+                                        <div className={`border p-2 rounded-md ${mainParent.educationLevel === 'level1' ? 'font-medium bg-blue-50' : ''}`}>
                                             <p>Level 1</p>
                                         </div>
-                                        <div className="border p-2 rounded-md font-medium bg-blue-50">
+                                        <div className={`border p-2 rounded-md ${mainParent.educationLevel === 'level2' ? 'font-medium bg-blue-50' : ''}`}>
                                             <p>Level 2</p>
                                         </div>
-                                        <div className="border p-2 rounded-md">
+                                        <div className={`border p-2 rounded-md ${mainParent.educationLevel === 'level3' ? 'font-medium bg-blue-50' : ''}`}>
                                             <p>Level 3</p>
                                         </div>
-                                        <div className="border p-2 rounded-md">
+                                        <div className={`border p-2 rounded-md ${mainParent.educationLevel === 'level4' ? 'font-medium bg-blue-50' : ''}`}>
                                             <p>Level 4 & above</p>
                                         </div>
-                                        <div className="border p-2 rounded-md">
+                                        <div className={`border p-2 rounded-md ${mainParent.educationLevel === 'other' ? 'font-medium bg-blue-50' : ''}`}>
                                             <p>Other qualifications</p>
                                         </div>
                                     </div>
@@ -350,36 +413,39 @@ export default function FRATReport({ assessmentId, familyId }: FRATReportProps) 
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-600">M/F:</p>
-                                            <p className="font-medium">M</p> {/* Default to M for demonstration */}
+                                            <p className="font-medium">
+                                                {supportingParent.gender === 'male' ? 'M' :
+                                                supportingParent.gender === 'female' ? 'F' :
+                                                    supportingParent.gender}</p>
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-600">Parental Responsibility:</p>
-                                            <p className="font-medium">Y</p> {/* Default to Y for demonstration */}
+                                            <p className="font-medium">{supportingParent.parentalResponsibility ? 'Y' : 'N'}</p>
                                         </div>
                                     </div>
 
                                     <div className="mb-4">
                                         <p className="text-sm text-gray-600 mb-2">Relationship to child:</p>
                                         <div className="grid grid-cols-4 gap-2 border rounded-md p-2">
-                                            <div className="border p-2 rounded-md">
+                                            <div className={`border p-2 rounded-md ${isRelationship(supportingParent.relationToChild, 'birth-mother') ? 'font-medium bg-blue-50' : ''}`}>
                                                 <p>Birth Mother</p>
                                             </div>
-                                            <div className="border p-2 rounded-md">
+                                            <div className={`border p-2 rounded-md ${isRelationship(supportingParent.relationToChild, 'adoptive-mother') ? 'font-medium bg-blue-50' : ''}`}>
                                                 <p>Adoptive Mother</p>
                                             </div>
-                                            <div className="border p-2 rounded-md">
+                                            <div className={`border p-2 rounded-md ${isRelationship(supportingParent.relationToChild, 'step-mother') ? 'font-medium bg-blue-50' : ''}`}>
                                                 <p>Step Mother</p>
                                             </div>
-                                            <div className="border p-2 rounded-md">
+                                            <div className={`border p-2 rounded-md ${isRelationship(supportingParent.relationToChild, 'other') ? 'font-medium bg-blue-50' : ''}`}>
                                                 <p>Other family member</p>
                                             </div>
-                                            <div className="border p-2 rounded-md font-medium bg-blue-50">
+                                            <div className={`border p-2 rounded-md ${isRelationship(supportingParent.relationToChild, 'birth-father') ? 'font-medium bg-blue-50' : ''}`}>
                                                 <p>Birth Father</p>
                                             </div>
-                                            <div className="border p-2 rounded-md">
+                                            <div className={`border p-2 rounded-md ${isRelationship(supportingParent.relationToChild, 'adoptive-father') ? 'font-medium bg-blue-50' : ''}`}>
                                                 <p>Adoptive Father</p>
                                             </div>
-                                            <div className="border p-2 rounded-md">
+                                            <div className={`border p-2 rounded-md ${isRelationship(supportingParent.relationToChild, 'step-father') ? 'font-medium bg-blue-50' : ''}`}>
                                                 <p>Step Father</p>
                                             </div>
                                         </div>
@@ -411,49 +477,22 @@ export default function FRATReport({ assessmentId, familyId }: FRATReportProps) 
                             {/* Section A: Main Parent/Carer */}
                             <div className="section mb-8">
                                 <h2 className="text-lg font-semibold mb-4">Section A: Main Parent/Carer:</h2>
-                                <AssessmentTable items={sectionAItems} collection={mainParentAssessment} />
+                                <AssessmentTable
+                                    items={sectionAItems}
+                                    collection={mainParentAssessment} />
                             </div>
 
                             {/* Section B: Supporting Parent/Carer */}
-                            {supportingParent && (
+                            {supportingParent &&  (
                                 <div className="section mb-8">
                                     <h2 className="text-lg font-semibold mb-4">Section B: Supporting Parent/Carer:</h2>
-                                    {/* Using placeholder data for Section B */}
-                                    <div className="border rounded-md overflow-hidden">
-                                        <table className="w-full">
-                                            <thead>
-                                            <tr className="bg-gray-100">
-                                                <th className="px-4 py-2 text-left">My concerns are about:</th>
-                                                {assessmentLevels.map(level => (
-                                                    <th key={level} className="px-4 py-2 text-center w-16">{level}</th>
-                                                ))}
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            {sectionBItems.map((item, index) => (
-                                                <tr key={item.id} className="border-t">
-                                                    <td className="px-4 py-2">{item.id}. {item.title}</td>
-                                                    <td className={`px-4 py-2 text-center ${index === 0 || index === 1 || index === 5 ? 'bg-blue-100' : ''}`}>
-                                                        {(index === 0 || index === 1 || index === 5) && '✓'}
-                                                    </td>
-                                                    <td className={`px-4 py-2 text-center ${index === 2 || index === 4 ? 'bg-blue-100' : ''}`}>
-                                                        {(index === 2 || index === 4) && '✓'}
-                                                    </td>
-                                                    <td className={`px-4 py-2 text-center ${index === 3 ? 'bg-blue-100' : ''}`}>
-                                                        {index === 3 && '✓'}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-center"></td>
-                                                    <td className="px-4 py-2 text-center"></td>
-                                                    <td className="px-4 py-2 text-center"></td>
-                                                </tr>
-                                            ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    <AssessmentTable
+                                        items={sectionBItems}
+                                        collection={supportingParentAssessment} />
                                 </div>
                             )}
 
-                            {/* Section C: Main Parent/Carer Name */}
+                            {/* Section C: External Influence */}
                             <div className="section mb-8">
                                 <h2 className="text-lg font-semibold mb-4">Section C: Main Parent/Carer: {mainParent.firstName} {mainParent.lastName}</h2>
                                 <AssessmentTable items={sectionCItems} collection={externalInfluenceAssessment} />
@@ -463,38 +502,9 @@ export default function FRATReport({ assessmentId, familyId }: FRATReportProps) 
                             {child && (
                                 <div className="section mb-8">
                                     <h2 className="text-lg font-semibold mb-4">Section D: Main Parent/Carer: {mainParent.firstName} {mainParent.lastName} - Child's Name: {child.firstName} {child.lastName}</h2>
-                                    {/* Using placeholder data for Section D */}
-                                    <div className="border rounded-md overflow-hidden">
-                                        <table className="w-full">
-                                            <thead>
-                                            <tr className="bg-gray-100">
-                                                <th className="px-4 py-2 text-left">My concerns are about:</th>
-                                                {assessmentLevels.map(level => (
-                                                    <th key={level} className="px-4 py-2 text-center w-16">{level}</th>
-                                                ))}
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            {sectionDItems.map((item, index) => (
-                                                <tr key={item.id} className="border-t">
-                                                    <td className="px-4 py-2">{item.id}. {item.title}</td>
-                                                    <td className={`px-4 py-2 text-center ${index !== 1 && index !== 4 ? 'bg-blue-100' : ''}`}>
-                                                        {index !== 1 && index !== 4 && '✓'}
-                                                    </td>
-                                                    <td className={`px-4 py-2 text-center ${index === 1 ? 'bg-blue-100' : ''}`}>
-                                                        {index === 1 && '✓'}
-                                                    </td>
-                                                    <td className={`px-4 py-2 text-center ${index === 4 ? 'bg-blue-100' : ''}`}>
-                                                        {index === 4 && '✓'}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-center"></td>
-                                                    <td className="px-4 py-2 text-center"></td>
-                                                    <td className="px-4 py-2 text-center"></td>
-                                                </tr>
-                                            ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    <AssessmentTable
+                                        items={sectionDItems}
+                                        collection={childAssessment} />
                                 </div>
                             )}
                         </div>
