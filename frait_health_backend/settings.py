@@ -42,6 +42,43 @@ class Settings(BaseSettings):
     environment: str = "dev"
 
     log_level: LogLevel = LogLevel.INFO
+    # LDAP Settings
+    ldap_server_url: str = "ldap://your-ad-server"
+    ldap_domain: str = "DOMAIN"
+    ldap_search_base: str = "DC=domain,DC=local"
+    ldap_groups_base: str = "CN=Groups,DC=domain,DC=local"
+    
+    # LDAP Role Mappings - maps UserRole to LDAP group names
+    ldap_role_groups: dict[str, str] = {
+        "Admin": "Admins",
+        "Manager": "Managers",
+        "Health Visitor": "HealthVisitors",
+        "Assistant Health Visitor": "AssistantHealthVisitors",
+    }
+
+    # SSO Settings
+    sso_enabled: bool = False
+    sso_provider: str = "azure"  # Options: azure, okta, google
+    sso_client_id: str = ""
+    sso_client_secret: str = ""
+    sso_tenant_id: str = ""  # For Azure AD
+    sso_metadata_url: str = ""
+    sso_token_endpoint: str = ""
+    sso_authorize_endpoint: str = ""
+    sso_jwks_uri: str = ""
+    sso_logout_endpoint: str = ""
+    sso_redirect_uri: str = ""
+    
+    @property
+    def get_ldap_group_dn(self, group_name: str) -> str:
+        """
+        Get the full Distinguished Name (DN) for a LDAP group.
+        
+        :param group_name: Name of the group
+        :return: Full DN path for the group
+        """
+        return f"CN={group_name},{self.ldap_groups_base}"
+
     # Variables for the database
     db_host: str = "localhost"
     db_port: int = 5432

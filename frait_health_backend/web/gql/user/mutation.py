@@ -5,6 +5,7 @@ import strawberry
 from strawberry.types import Info
 
 from frait_health_backend.db.dao.user_dao import UserDAO
+from frait_health_backend.web.api.auth.sso import authenticate_sso_user
 from frait_health_backend.settings import Settings
 from frait_health_backend.web.gql.user.schema import AuthResponse, UserModelDTO
 
@@ -80,6 +81,32 @@ class Mutation:
             name=user.name,
             email=user.email,
             role=user.role,
+        )
+
+    @strawberry.mutation(description="Login via SSO")
+    async def login_sso(
+        self,
+        info: Info,
+        token: str,
+    ) -> AuthResponse:
+        """
+        Login using SSO token.
+
+        :param info: connection info.
+        :param token: SSO token.
+        :return: authentication response with JWT token.
+        """
+        user = await authenticate_sso_user(token)
+        
+        jwt_token = self.create_access_token(
+            user_id=user.id,
+            email=user.email,
+            role=user.role,
+        )
+        
+        return AuthResponse(
+            access_token=jwt_token,
+            token_type="bearer",
         )
 
     @strawberry.mutation(description="Login user")

@@ -41,7 +41,7 @@ class UserDAO:
         name: str,
         email: str,
         password: str,
-        role: UserRole = UserRole.EMPLOYEE,
+        role: UserRole = UserRole.HEALTH_VISITOR,
     ) -> UserModel:
         """
         Add single user to session.

@@ -1,110 +1,42 @@
 version: '3'
 
 services:
-  api: &main_app
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-      target: dev
-    image: frait_health_backend:${FRAIT_HEALTH_BACKEND_VERSION:-dev}
+  traefik:
+    image: traefik:v2.10
     restart: always
-    env_file:
-      - .env
+    command:
+      - "--api.insecure=false"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ADMIN_EMAIL:-shitlesh.bakshi@gmail.com}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
     ports:
-      - "8000:8000"
+      - "${HTTP_PORT:-80}:80"    # HTTP port - environment variable with default
+      - "${HTTPS_PORT:-443}:443" # HTTPS port - environment variable with default
     volumes:
-      - ./:/app/src
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      FRAIT_HEALTH_BACKEND_HOST: 0.0.0.0
-      FRAIT_HEALTH_BACKEND_DB_HOST: frait_health_backend-db
-      FRAIT_HEALTH_BACKEND_DB_PORT: 5432
-      FRAIT_HEALTH_BACKEND_DB_USER: frait_health_backend
-      FRAIT_HEALTH_BACKEND_DB_PASS: frait_health_backend
-      FRAIT_HEALTH_BACKEND_DB_BASE: frait_health_backend
-      FRAIT_HEALTH_BACKEND_REDIS_HOST: frait_health_backend-redis
-      ENVIRONMENT: development
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-certs:/letsencrypt
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.dev.efrait.com`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls=true"
-      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.backend.loadbalancer.server.port=8000"
-    networks:
-      - efrait-network
-
-  db:
-    image: postgres:16.3-bullseye
-    hostname: frait_health_backend-db
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U frait_health_backend"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    environment:
-      POSTGRES_USER: frait_health_backend
-      POSTGRES_PASSWORD: frait_health_backend
-      POSTGRES_DB: frait_health_backend
-    ports:
-      - "5432:5432"
-    volumes:
-      - frait_health_backend-db-data-dev:/var/lib/postgresql/data
-    restart: always
-    networks:
-      - efrait-network
-
-  migrator:
-    image: frait_health_backend:${FRAIT_HEALTH_BACKEND_VERSION:-dev}
-    restart: "no"
-    command: alembic upgrade head
-    volumes:
-      - .:/app/src
-    environment:
-      PYTHONPATH: /app/src
-      FRAIT_HEALTH_BACKEND_HOST: 0.0.0.0
-      FRAIT_HEALTH_BACKEND_DB_HOST: frait_health_backend-db
-      FRAIT_HEALTH_BACKEND_DB_PORT: 5432
-      FRAIT_HEALTH_BACKEND_DB_USER: frait_health_backend
-      FRAIT_HEALTH_BACKEND_DB_PASS: frait_health_backend
-      FRAIT_HEALTH_BACKEND_DB_BASE: frait_health_backend
-      ENVIRONMENT: development
-      FRAIT_HEALTH_BACKEND_PUBLIC_URL: https://api.dev.efrait.com:9443  # Updated port from 8443 to 9443
-      FRAIT_HEALTH_FRONTEND_URL: https://dev.efrait.com:9443           # Updated port from 8443 to 9443
-    healthcheck:
-      test: pg_isready -h frait_health_backend-db -U frait_health_backend
-      interval: 1s
-      timeout: 5s
-      retries: 10
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - efrait-network
-
-  redis:
-    image: bitnami/redis:6.2.5
-    hostname: "frait_health_backend-redis"
-    restart: always
-    environment:
-      ALLOW_EMPTY_PASSWORD: "yes"
-    healthcheck:
-      test: redis-cli ping
-      interval: 1s
-      timeout: 3s
-      retries: 50
+      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_DOMAIN:-traefik.efrait.com}`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=${ADMIN_USER:-admin}:${ADMIN_PASSWORD_HASH:-$$2y$$05$$eoD0/2rGQ1NiR9zLjvL8qOEUEtl.KpDGN2nBdhIH7ODAvbQFn5bOy}"
     networks:
       - efrait-network
 
 volumes:
-  frait_health_backend-db-data-dev:
-    name: frait_health_backend-db-data-dev
+  traefik-certs:
+    name: traefik-certs
 
 networks:
   efrait-network:

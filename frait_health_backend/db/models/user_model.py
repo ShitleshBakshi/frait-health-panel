@@ -1,7 +1,9 @@
 from enum import Enum
+from typing import Optional
 
+from sqlalchemy import Column
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.sql.sqltypes import String
+from sqlalchemy.sql.sqltypes import String, JSON, Text
 
 from frait_health_backend.db.base import Base
 
@@ -11,8 +13,8 @@ class UserRole(str, Enum):
 
     ADMIN = "Admin"
     MANAGER = "Manager"
-    EMPLOYEE = "Employee"
-    ASSISTANT = "Assistant to Employee"
+    HEALTH_VISITOR = "Health Visitor"
+    ASSISTANT_HEALTH_VISITOR = "Assistant Health Visitor"
 
 
 class UserModel(Base):
@@ -23,5 +25,7 @@ class UserModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(length=200))
     email: Mapped[str] = mapped_column(String(length=200), unique=True, index=True)
-    password: Mapped[str] = mapped_column(String(length=200))
+    username: Mapped[str] = mapped_column(String(length=200), unique=True, nullable=True)
     role: Mapped[UserRole] = mapped_column(String(length=200))
+    sso_metadata: Mapped[Optional[dict]] = mapped_column(JSON(), nullable=True)
+

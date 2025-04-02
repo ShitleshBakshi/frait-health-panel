@@ -6,6 +6,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from frait_health_backend.log import configure_logging
 from frait_health_backend.web.api.router import api_router
+from frait_health_backend.web.api.auth.router import router as sso_router
 from frait_health_backend.web.gql.router import gql_router
 from frait_health_backend.web.lifespan import lifespan_setup
 
@@ -46,6 +47,7 @@ def get_app() -> FastAPI:
 
     # Main router for the API.
     app.include_router(router=api_router, prefix="/api")
+    app.include_router(router=sso_router, prefix="/api/auth", tags=["auth"])
     # Graphql router
     app.include_router(router=gql_router, prefix="/graphql")
 
