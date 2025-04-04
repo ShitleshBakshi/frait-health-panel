@@ -12,14 +12,15 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">3.9.1,<4"
+bcrypt = "^4.0.1"
 fastapi = "^0.115.6"
 uvicorn = { version = "^0.34.0", extras = ["standard"] }
 gunicorn = "^23.0.0"
-pydantic = "^2.10.4"
-pydantic-settings = "^2.7.0"
+pydantic = "^2.5.3"
+pydantic-settings = "^2.1.0"
 yarl = "^1.18.3"
 ldap3 = "^2.9.1"
-python-ldap = "^3.4.0"
+python-ldap = "^3.4.4"
 ujson = "^5.10.0"
 SQLAlchemy = {version = "^2.0.36", extras = ["asyncio"]}
 alembic = "^1.14.0"
@@ -29,6 +30,7 @@ httptools = "^0.6.4"
 pymongo = "^4.10.1"
 strawberry-graphql = { version = "^0.256.1", extras = ["fastapi"] }
 loguru = "^0.7.3"
+pyjwt = "^2.10.1"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -1,6 +1,10 @@
 FROM python:3.11.4-slim-bullseye AS prod
 RUN apt-get update && apt-get install -y \
   gcc \
+  python3-dev \
+  libldap2-dev \
+  libsasl2-dev \
+  libssl-dev \
   && rm -rf /var/lib/apt/lists/*
 
 
@@ -19,6 +23,7 @@ RUN --mount=type=cache,target=/tmp/poetry_cache poetry install --only main
 # Removing gcc
 RUN apt-get purge -y \
   gcc \
+  && apt-get autoremove -y \
   && rm -rf /var/lib/apt/lists/*
 
 # Copying actuall application

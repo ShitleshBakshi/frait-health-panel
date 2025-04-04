@@ -5,10 +5,12 @@ from fastapi.responses import UJSONResponse
 from starlette.middleware.cors import CORSMiddleware
 
 from frait_health_backend.log import configure_logging
+from frait_health_backend.settings import settings
 from frait_health_backend.web.api.router import api_router
-from frait_health_backend.web.api.auth.router import router as sso_router
+from frait_health_backend.web.api.auth.router import router
 from frait_health_backend.web.gql.router import gql_router
 from frait_health_backend.web.lifespan import lifespan_setup
+from frait_health_backend.web.api.auth.windows_auth_middleware import WindowsAuthMiddleware
 
 
 def get_app() -> FastAPI:
@@ -30,6 +32,9 @@ def get_app() -> FastAPI:
         default_response_class=UJSONResponse,
     )
 
+    if settings.windows_auth_enabled:
+        app.add_middleware(WindowsAuthMiddleware)
+
     # Add CORS middleware
     app.add_middleware(
         CORSMiddleware,
@@ -47,7 +52,7 @@ def get_app() -> FastAPI:
 
     # Main router for the API.
     app.include_router(router=api_router, prefix="/api")
-    app.include_router(router=sso_router, prefix="/api/auth", tags=["auth"])
+    app.include_router(router=router, prefix="/api/auth", tags=["auth"])
     # Graphql router
     app.include_router(router=gql_router, prefix="/graphql")
 

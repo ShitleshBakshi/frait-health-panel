@@ -40,8 +40,10 @@ class UserDAO:
         self,
         name: str,
         email: str,
-        password: str,
-        role: UserRole = UserRole.HEALTH_VISITOR,
+        external_id: str,
+        role: UserRole,
+        identity_provider: str,
+        sso_metadata: Optional[dict] = None,
     ) -> UserModel:
         """
         Add single user to session.
@@ -52,12 +54,16 @@ class UserDAO:
         :param role: role of the user
         :return: created user model
         """
-        hashed_password = self._hash_password(password)
+        # hashed_password = self._hash_password(password)
         user = UserModel(
             name=name,
             email=email,
-            password=hashed_password,
+            #  amazonq-ignore-next-line
+            password="",  # No password needed for Windows Auth
             role=role,
+            external_id=external_id,
+            identity_provider=identity_provider,
+            sso_metadata=sso_metadata,
         )
         self.session.add(user)
         await self.session.flush()
@@ -124,3 +130,9 @@ class UserDAO:
             query = query.where(UserModel.role == role)
         rows = await self.session.execute(query)
         return list(rows.scalars().fetchall())
+
+    async def get_user_by_external_id(self, external_id: str) -> Optional[UserModel]:
+        """Get user by external ID (Windows username)."""
+        query = select(UserModel).where(UserModel.external_id == external_id)
+        result = await self.session.execute(query)
+        return result.scalars().first()

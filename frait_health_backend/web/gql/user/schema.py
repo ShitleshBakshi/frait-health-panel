@@ -13,6 +13,10 @@ class UserModelDTO:
     name: str
     email: str
     role: str
+    username: Optional[str] = None
+    external_id: Optional[str] = None
+    identity_provider: Optional[str] = None
+    sso_metadata: Optional[dict] = None
 
 
 @strawberry.type

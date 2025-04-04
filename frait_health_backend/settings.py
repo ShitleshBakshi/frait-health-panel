@@ -56,18 +56,9 @@ class Settings(BaseSettings):
         "Assistant Health Visitor": "AssistantHealthVisitors",
     }
 
-    # SSO Settings
-    sso_enabled: bool = False
-    sso_provider: str = "azure"  # Options: azure, okta, google
-    sso_client_id: str = ""
-    sso_client_secret: str = ""
-    sso_tenant_id: str = ""  # For Azure AD
-    sso_metadata_url: str = ""
-    sso_token_endpoint: str = ""
-    sso_authorize_endpoint: str = ""
-    sso_jwks_uri: str = ""
-    sso_logout_endpoint: str = ""
-    sso_redirect_uri: str = ""
+    # Windows Authentication Settings
+    windows_auth_enabled: bool = True
+    windows_auth_provider: str = "windows_ad"
     
     @property
     def get_ldap_group_dn(self, group_name: str) -> str:

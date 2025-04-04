@@ -28,19 +28,22 @@ class Query:
             return None
 
         # Use the UserDAO to fetch the complete user model
-        dao = UserDAO(info.context.db_connection)
-        users = await dao.filter(id=user_id)
+        user_dao = UserDAO()
+        user = await user_dao.get_user_by_id(user_id=user_id)
 
-        # Return the first user if found, otherwise None
-        if users and len(users) > 0:
-            user = users[0]
-            return UserModelDTO(
-                id=user.id,
-                name=user.name,
-                email=user.email,
-                role=user.role,
-            )
-        return None
+        if not user:
+            return None
+
+        return UserModelDTO(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            role=user.role,
+            username=user.username,
+            external_id=user.external_id,
+            identity_provider=user.identity_provider,
+            sso_metadata=user.sso_metadata,
+        )
 
     @strawberry.field(description="Get all users")
     async def get_users(
@@ -57,14 +60,23 @@ class Query:
         :param offset: offset of user objects, defaults to 0.
         :return: list of user objects from database.
         """
-        dao = UserDAO(info.context.db_connection)
+        dao = UserDAO()
         users = await dao.get_all_users(limit=limit, offset=offset)
         return [
-            UserModelDTO(id=user.id, name=user.name, email=user.email, role=user.role)
+            UserModelDTO(
+                id=user.id,
+                name=user.name,
+                email=user.email,
+                role=user.role,
+                username=user.username,
+                external_id=user.external_id,
+                identity_provider=user.identity_provider,
+                sso_metadata=user.sso_metadata,
+            )
             for user in users
         ]
 
-    @strawberry.field(description="Filter users by criteria")
+    @strawberry.field(description="Filter users")
     async def filter_users(
         self,
         info: Info,
@@ -81,13 +93,29 @@ class Query:
         :param role: role of the user.
         :return: list of filtered user objects from database.
         """
-        dao = UserDAO(info.context.db_connection)
+        dao = UserDAO()
         from frait_health_backend.db.models.user_model import UserRole
 
         user_role = UserRole(role) if role else None
-        users = await dao.filter(email=email, name=name, role=user_role)
-        # Convert UserModel list to UserModelDTO list
+        users = await dao.filter(
+            email=email,
+            name=name,
+            role=user_role,
+        )
+
+        if not users:
+            return []
+
         return [
-            UserModelDTO(id=user.id, name=user.name, email=user.email, role=user.role)
+            UserModelDTO(
+                id=user.id,
+                name=user.name,
+                email=user.email,
+                role=user.role,
+                username=user.username,
+                external_id=user.external_id,
+                identity_provider=user.identity_provider,
+                sso_metadata=user.sso_metadata,
+            )
             for user in users
         ]
