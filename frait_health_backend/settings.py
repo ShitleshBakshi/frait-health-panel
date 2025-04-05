@@ -42,12 +42,16 @@ class Settings(BaseSettings):
     environment: str = "dev"
 
     log_level: LogLevel = LogLevel.INFO
+
+    # LDAP Authentication settings
+    ldap_auth_enabled: bool = False  # Disabled by default
+
     # LDAP Settings
     ldap_server_url: str = "ldap://your-ad-server"
     ldap_domain: str = "DOMAIN"
     ldap_search_base: str = "DC=domain,DC=local"
     ldap_groups_base: str = "CN=Groups,DC=domain,DC=local"
-    
+
     # LDAP Role Mappings - maps UserRole to LDAP group names
     ldap_role_groups: dict[str, str] = {
         "Admin": "Admins",
@@ -57,14 +61,19 @@ class Settings(BaseSettings):
     }
 
     # Windows Authentication Settings
-    windows_auth_enabled: bool = True
+    windows_auth_enabled: bool = False
     windows_auth_provider: str = "windows_ad"
-    
+
+    # JWT settings
+    jwt_secret_key: str = "your_secret_key_here"  # Change in production
+    jwt_algorithm: str = "HS256"
+    jwt_token_expire_minutes: int = 60 * 24  # 24 hours
+
     @property
     def get_ldap_group_dn(self, group_name: str) -> str:
         """
         Get the full Distinguished Name (DN) for a LDAP group.
-        
+
         :param group_name: Name of the group
         :return: Full DN path for the group
         """

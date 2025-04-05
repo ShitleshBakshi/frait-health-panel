@@ -29,7 +29,26 @@ class WindowsAuthMiddleware(BaseHTTPMiddleware):
             return response
 
         # Process the authenticated user
-        # [Implementation needed]
+        username = self.extract_windows_username(request)
+        if username:
+            # Store the username in request state for later use
+            request.state.windows_username = username
+
+            # Try to find user in database
+            user_dao = UserDAO()
+            user = await user_dao.get_user_by_external_id(username)
+
+            if user:
+                # User exists, create session token
+                from frait_health_backend.web.gql.user.mutation import Mutation
+                token = Mutation.create_access_token(
+                    user_id=user.id,
+                    email=user.email,
+                    role=user.role,
+                )
+
+                # Store token in request state
+                request.state.auth_token = token
 
         # Continue with the request
         return await call_next(request)

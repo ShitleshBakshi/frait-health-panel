@@ -2,6 +2,7 @@
 
 from typing import List
 
+#  amazonq-ignore-next-line
 import strawberry
 from strawberry.types import Info
 

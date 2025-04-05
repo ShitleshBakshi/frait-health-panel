@@ -6,6 +6,7 @@ from frait_health_backend.web.gql import (
     frai_assessment_details,
     frat_assessment_details,
     initial_family,
+    user
 )
 from frait_health_backend.web.gql.context import Context, get_context
 
@@ -16,6 +17,7 @@ class Query(
     family_details.Query,
     frat_assessment_details.Query,
     frai_assessment_details.Query,
+    user.Query
 ):
     """Main query."""
 
@@ -26,6 +28,7 @@ class Mutation(
     family_details.Mutation,
     frat_assessment_details.Mutation,
     frai_assessment_details.Mutation,
+    user.Mutation
 ):
     """Main mutation."""
 

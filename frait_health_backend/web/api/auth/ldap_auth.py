@@ -3,6 +3,8 @@
 from typing import Optional
 import ldap
 from fastapi import HTTPException
+
+from frait_health_backend.db.dao import user_dao
 from frait_health_backend.settings import Settings
 from frait_health_backend.db.models.user_model import UserModel
 from frait_health_backend.db.dao.user_dao import UserDAO
@@ -25,7 +27,7 @@ def get_ldap_connection():
 async def authenticate_ldap_user(username: str, password: str) -> Optional[UserModel]:
     """Authenticate user against LDAP server and get or create user in database."""
     conn = get_ldap_connection()
-    
+
     try:
         # Search for user in AD
         search_filter = f"(&(objectClass=user)(sAMAccountName={username}))"
@@ -35,21 +37,21 @@ async def authenticate_ldap_user(username: str, password: str) -> Optional[UserM
             search_filter,
             ["memberOf", "mail", "displayName"],
         )
-        
+
         if not result:
             raise HTTPException(
                 status_code=401,
                 detail="User not found in Active Directory",
             )
-            
+
         user_dn, attributes = result[0]
-        
+
         # Get user's groups
         groups = attributes.get("memberOf", [])
         if isinstance(groups, bytes):
             groups = [groups]
         groups = [g.decode() for g in groups]
-        
+
         # Map AD groups to roles
         role = None
         for role_name, group_name in settings.ldap_role_groups.items():
@@ -57,17 +59,17 @@ async def authenticate_ldap_user(username: str, password: str) -> Optional[UserM
             if group_dn in groups:
                 role = role_name
                 break
-                
+
         if not role:
             raise HTTPException(
                 status_code=403,
                 detail="User does not have any mapped roles",
             )
-            
+
         # Get or create user in database
         email = attributes.get("mail", [b""])[0].decode()
         name = attributes.get("displayName", [b""])[0].decode()
-        
+
         # Create or update user in database
         user = await UserDAO().get_user_by_external_id(username)
         if not user:
@@ -79,9 +81,9 @@ async def authenticate_ldap_user(username: str, password: str) -> Optional[UserM
                 identity_provider="windows_ad",
                 sso_metadata={"groups": groups},
             )
-            
+
         return user
-            
+
     except ldap.LDAPError as e:
         raise HTTPException(
             status_code=401,

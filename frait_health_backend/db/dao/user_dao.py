@@ -58,8 +58,6 @@ class UserDAO:
         user = UserModel(
             name=name,
             email=email,
-            #  amazonq-ignore-next-line
-            password="",  # No password needed for Windows Auth
             role=role,
             external_id=external_id,
             identity_provider=identity_provider,
@@ -68,6 +66,27 @@ class UserDAO:
         self.session.add(user)
         await self.session.flush()
         return user
+
+
+    # Alias for create_user to maintain API compatibility
+    async def create_sso_user(
+        self,
+        external_id: str,
+        email: str,
+        name: str,
+        role: UserRole,
+        identity_provider: str,
+        sso_metadata: Optional[dict] = None,
+    ) -> UserModel:
+        """Create user via SSO authentication."""
+        return await self.create_user(
+            name=name,
+            email=email,
+            external_id=external_id,
+            role=role,
+            identity_provider=identity_provider,
+            sso_metadata=sso_metadata,
+        )
 
     async def get_all_users(self, limit: int, offset: int) -> List[UserModel]:
         """
@@ -80,7 +99,6 @@ class UserDAO:
         raw_users = await self.session.execute(
             select(UserModel).limit(limit).offset(offset),
         )
-
         return list(raw_users.scalars().fetchall())
 
     async def authenticate_user(self, email: str, password: str) -> Optional[UserModel]:
@@ -102,6 +120,12 @@ class UserDAO:
             return user
 
         return None
+
+    async def get_user_by_id(self, user_id: str) -> Optional[UserModel]:
+        """Get user by ID."""
+        query = select(UserModel).where(UserModel.id == user_id)
+        result = await self.session.execute(query)
+        return result.scalars().first()
 
     async def filter(
         self,
@@ -136,3 +160,5 @@ class UserDAO:
         query = select(UserModel).where(UserModel.external_id == external_id)
         result = await self.session.execute(query)
         return result.scalars().first()
+
+

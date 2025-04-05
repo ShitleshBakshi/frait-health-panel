@@ -1,4 +1,7 @@
+from typing import Optional
+
 import strawberry
+from strawberry.scalars import JSON
 
 
 @strawberry.type
@@ -16,12 +19,15 @@ class UserModelDTO:
     username: Optional[str] = None
     external_id: Optional[str] = None
     identity_provider: Optional[str] = None
-    sso_metadata: Optional[dict] = None
+    sso_metadata: Optional[JSON] = None
 
 
 @strawberry.type
 class AuthResponse:
     """Response for authentication."""
 
-    access_token: str
+    success: bool
+    message: str
+    token: Optional[str] = None
+    user: Optional[UserModelDTO] = None
     token_type: str = "bearer"

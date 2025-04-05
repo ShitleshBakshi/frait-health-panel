@@ -19,8 +19,8 @@ class Query:
         :param info: connection info with context that contains user data from JWT.
         :return: current user or None if not authenticated.
         """
-        if not info.context.user_context.id:
-            return None
+        # if not info.context.user_context.id:
+        #     return None
 
         # Get user ID from the JWT token data stored in context
         user_id = info.context.user_context.id

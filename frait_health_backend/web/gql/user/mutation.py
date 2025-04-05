@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Optional
 
 import jwt
 import strawberry
@@ -55,8 +56,7 @@ class Mutation:
         info: Info,
         name: str,
         email: str,
-        password: str,
-        role: str,
+        role: str
     ) -> UserModelDTO:
         """
         Creates user model in a database.
@@ -68,12 +68,14 @@ class Mutation:
         :param role: role of the user, defaults to EMPLOYEE.
         :return: created user model.
         """
+
         dao = UserDAO(info.context.db_connection)
-        return await dao.create_user(
+        user_role = UserRole(role)
+        user = await dao.create_user(
             name=name,
             email=email,
             password=password,
-            role=role,
+            role=user_role,
         )
         return UserModelDTO(
             id=user.id,
@@ -104,6 +106,8 @@ class Mutation:
             return AuthResponse(
                 success=False,
                 message="Invalid credentials",
+                token=None,
+                user=None,
             )
 
         # Generate JWT tokens
