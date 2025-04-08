@@ -44,13 +44,13 @@ class Settings(BaseSettings):
     log_level: LogLevel = LogLevel.INFO
 
     # LDAP Authentication settings
-    ldap_auth_enabled: bool = False  # Disabled by default
+    ldap_auth_enabled: bool = True  # Disabled by default
 
     # LDAP Settings
-    ldap_server_url: str = "ldap://your-ad-server"
-    ldap_domain: str = "DOMAIN"
-    ldap_search_base: str = "DC=domain,DC=local"
-    ldap_groups_base: str = "CN=Groups,DC=domain,DC=local"
+    ldap_server_url: str = "ldap://34.229.200.54"
+    ldap_domain: str = "FRAITHEALTH"
+    ldap_search_base: str = "DC=fraithealth,DC=local"
+    ldap_groups_base: str = "CN=Users,DC=fraithealth,DC=local"
 
     # LDAP Role Mappings - maps UserRole to LDAP group names
     ldap_role_groups: dict[str, str] = {

@@ -19,21 +19,21 @@ async def ldap_auth(form_data: OAuth2PasswordRequestForm = Depends()):
             status_code=404,
             detail="LDAP authentication not enabled",
         )
-    
+
     # Authenticate against LDAP server
-    user = await authenticate_ldap_user(form_data.username, form_data.password)
-    
+    user = await authenticate_ldap_user(form_data.username, form_data.password, db_session=db_session)
+
     if not user:
         raise HTTPException(
             status_code=401,
             detail="Invalid credentials",
         )
-    
+
     # Create session token
     access_token = Mutation.create_access_token(
         user_id=user.id,
         email=user.email,
         role=user.role,
     )
-    
+
     return {"access_token": access_token, "token_type": "bearer"}

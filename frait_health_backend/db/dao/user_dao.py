@@ -15,26 +15,26 @@ class UserDAO:
     def __init__(self, session: AsyncSession = Depends(get_db_session)) -> None:
         self.session = session
 
-    def _hash_password(self, password: str) -> str:
-        """
-        Hash password using bcrypt.
-
-        :param password: password to hash
-        :return: hashed password
-        """
-        salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(password.encode(), salt)
-        return hashed.decode()
-
-    def _verify_password(self, password: str, hashed_password: str) -> bool:
-        """
-        Verify password against hashed password.
-
-        :param password: password to verify
-        :param hashed_password: hashed password to verify against
-        :return: True if password is correct
-        """
-        return bcrypt.checkpw(password.encode(), hashed_password.encode())
+    # def _hash_password(self, password: str) -> str:
+    #     """
+    #     Hash password using bcrypt.
+    #
+    #     :param password: password to hash
+    #     :return: hashed password
+    #     """
+    #     salt = bcrypt.gensalt()
+    #     hashed = bcrypt.hashpw(password.encode(), salt)
+    #     return hashed.decode()
+    #
+    # def _verify_password(self, password: str, hashed_password: str) -> bool:
+    #     """
+    #     Verify password against hashed password.
+    #
+    #     :param password: password to verify
+    #     :param hashed_password: hashed password to verify against
+    #     :return: True if password is correct
+    #     """
+    #     return bcrypt.checkpw(password.encode(), hashed_password.encode())
 
     async def create_user(
         self,
@@ -101,25 +101,25 @@ class UserDAO:
         )
         return list(raw_users.scalars().fetchall())
 
-    async def authenticate_user(self, email: str, password: str) -> Optional[UserModel]:
-        """
-        Authenticate user by email and password.
-
-        :param email: email of the user
-        :param password: password of the user
-        :return: user model if authentication is successful, None otherwise
-        """
-        query = select(UserModel).where(UserModel.email == email)
-        result = await self.session.execute(query)
-        user = result.scalars().first()
-
-        if user is None:
-            return None
-
-        if self._verify_password(password, user.password):
-            return user
-
-        return None
+    # async def authenticate_user(self, email: str, password: str) -> Optional[UserModel]:
+    #     """
+    #     Authenticate user by email and password.
+    #
+    #     :param email: email of the user
+    #     :param password: password of the user
+    #     :return: user model if authentication is successful, None otherwise
+    #     """
+    #     query = select(UserModel).where(UserModel.email == email)
+    #     result = await self.session.execute(query)
+    #     user = result.scalars().first()
+    #
+    #     if user is None:
+    #         return None
+    #
+    #     if self._verify_password(password, user.password):
+    #         return user
+    #
+    #     return None
 
     async def get_user_by_id(self, user_id: str) -> Optional[UserModel]:
         """Get user by ID."""
