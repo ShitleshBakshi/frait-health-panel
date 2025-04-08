@@ -69,7 +69,10 @@ export const GET_FAMILY_DETAILS = `
 `;
 
 // Function to execute the create family details mutation
+import logger from '../logger';
+
 export async function createFamilyDetails(input: FamilyDetailsInput): Promise<boolean> {
+    logger.info('Creating family details', { familyId: input.id });
     try {
         const response = await fetch('/graphql', {
             method: 'POST',
@@ -85,18 +88,27 @@ export async function createFamilyDetails(input: FamilyDetailsInput): Promise<bo
         const result = await response.json();
 
         if (result.errors) {
-            throw new Error(result.errors[0].message);
+            const errorMessage = result.errors[0].message;
+            logger.error('GraphQL error in create family details', {
+                error: errorMessage,
+                familyId: input.id
+            });
+            throw new Error(errorMessage);
         }
 
         return result.data.createFamilyDetails;
     } catch (error) {
-        console.error('Error creating family details:', error);
+        logger.error('Failed to create family details', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            familyId: input.id
+        });
         throw error;
     }
 }
 
 // Function to fetch family details by ID
 export async function getFamilyDetails(familyId: number) {
+    logger.info('Getting family details', { familyId });
     try {
         const response = await fetch('/graphql', {
             method: 'POST',
@@ -112,12 +124,16 @@ export async function getFamilyDetails(familyId: number) {
         const result = await response.json();
 
         if (result.errors) {
-            throw new Error(result.errors[0].message);
+            const errorMessage = result.errors[0].message;
+            logger.error('GraphQL error in get family details', {
+                error: errorMessage,
+                familyId
+            });
+            throw new Error(errorMessage);
         }
 
         return result.data.getFamilyDetails;
     } catch (error) {
-        console.error('Error fetching family details:', error);
         throw error;
     }
 }

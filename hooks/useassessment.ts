@@ -135,7 +135,7 @@ export function useAssessment(
             updateAssessment(updatedAssessment)
         } else {
             // This should not happen normally as we're updating an existing assessment
-            console.error('Assessment not found:', assessmentId)
+            
         }
     }
 

@@ -76,6 +76,7 @@ export const saveAssessmentToBackend = createAsyncThunk(
             dispatch(setLoading(false));
             dispatch(setError(error instanceof Error ? error.message : "Failed to save assessment"));
             return rejectWithValue(error instanceof Error ? error.message : "Failed to save assessment");
+
         }
     }
 );

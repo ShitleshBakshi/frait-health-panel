@@ -92,7 +92,6 @@ export const fetchFamilies = createAsyncThunk(
                 childDob: family.childDob,
                 updatedAt: new Date().toISOString().replace('T', ' ').substring(0, 19)
             }));
-
             return families;
         } catch (error) {
             return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch families');
@@ -118,7 +117,6 @@ export const addFamily = createAsyncThunk(
                 childDob: familyInput.childDob || "Not Provided"
             };
 
-            console.log("Sending to backend:", backendInput); // Debug log
 
             // GraphQL mutation to add a new family
             const result = await fetchGraphQL(ADD_FAMILY_MUTATION, {
@@ -137,7 +135,8 @@ export const addFamily = createAsyncThunk(
                 updatedAt: familyInput.updatedAt,
             };
         } catch (error) {
-            console.error("Error adding family:", error);
+            
+
             return rejectWithValue(error instanceof Error ? error.message : 'Failed to add family');
         }
     }
@@ -184,7 +183,6 @@ const familySlice = createSlice({
                 a => a.familyId === action.payload.familyId &&
                     a.id === action.payload.id
             );
-
             if (!exists) {
                 state.assessments.unshift(action.payload);
             }

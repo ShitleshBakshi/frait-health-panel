@@ -1,4 +1,4 @@
-import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import { configureStore, combineReducers } from "@reduxjs/toolkit"
 import {
     persistStore,
     persistReducer,
@@ -15,6 +15,7 @@ import familyReducer from "./slices/familySlice";
 import registrationReducer from "./slices/registrationSlice";
 import assessmentReducer from "./slices/assessmentSlice";
 import familyDetailsReducer from "./slices/familyDetailsSlice";
+
 
 // Define persist configuration type
 interface PersistConfig {

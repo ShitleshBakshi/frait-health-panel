@@ -44,6 +44,7 @@ const userSlice = createSlice({
             state.role = action.payload.role
             state.healthBoard = action.payload.healthBoard
         },
+
         clearUser: (state) => {
             // Store the current assigned families
             const preservedAssignments = { ...state.assignedFamilies };
@@ -67,6 +68,7 @@ const userSlice = createSlice({
             if (!state.assignedFamilies[assistantId]) {
                 state.assignedFamilies[assistantId] = []
             }
+
 
             // Add the family if not already assigned
             if (!state.assignedFamilies[assistantId].includes(familyId)) {

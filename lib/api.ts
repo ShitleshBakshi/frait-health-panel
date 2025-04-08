@@ -13,11 +13,14 @@ export const GRAPHQL_URL = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localh
  * @param headers - Optional additional headers
  * @returns Promise with the response data
  */
+import logger from './logger';
+
 export async function fetchGraphQL(
     query: string,
     variables: Record<string, any> = {},
     headers: Record<string, string> = {}
 ) {
+
     try {
         const response = await fetch(GRAPHQL_URL, {
             method: 'POST',
@@ -36,13 +39,11 @@ export async function fetchGraphQL(
 
         // Handle GraphQL errors
         if (json.errors) {
-            console.error('GraphQL Error:', json.errors);
             throw new Error(json.errors[0]?.message || 'An error occurred during the GraphQL request');
         }
 
         return json.data;
     } catch (error) {
-        console.error('API request failed:', error);
         throw error;
     }
 }

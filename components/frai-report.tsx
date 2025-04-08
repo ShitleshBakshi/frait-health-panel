@@ -12,6 +12,119 @@ import {
 } from "@/lib/assessment-utils";
 
 
+// Print styles for the FRAI report
+const printStyles = `
+@media print {
+  /* Hide UI elements not needed for printing */
+  header, nav, button, .no-print {
+    display: none !important;
+  }
+  
+  /* Hide sidebar completely */
+  aside, .sidebar, [data-sidebar="sidebar"], nav[aria-label="Sidebar"] {
+    display: none !important;
+  }
+  
+  /* Hide any sidebar container */
+  .flex > *:first-child:not(main) {
+    display: none !important;
+  }
+  
+  /* Make the main content take full width */
+  body {
+    background-color: white !important;
+    margin: 0 !important;
+    padding: 20px !important;
+  }
+  
+  /* Format for printing */
+  .max-w-7xl {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  /* Make sure the report is centered */
+  .mx-auto {
+    width: 100% !important;
+  }
+  
+  /* Table formatting */
+  table {
+    page-break-inside: avoid;
+    border-collapse: collapse;
+    width: 100%;
+  }
+  
+  th, td {
+    border: 1px solid #ccc !important;
+  }
+  
+  /* Preserve highlighting colors in print */
+  .bg-yellow-200 {
+    background-color: #fef9c3 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .bg-[#1e56b0], .bg-blue-600 {
+    background-color: #1e56b0 !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .bg-[#1f2937], .bg-gray-600 {
+    background-color: #1f2937 !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .bg-green-500 {
+    background-color: #22c55e !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  /* Title formatting */
+  .title {
+    text-align: center;
+    margin-bottom: 24px;
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  /* Header boxes */
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .header-box {
+    background-color: #f9fafb !important;
+    padding: 16px;
+    border-radius: 8px;
+    width: 48%;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  /* Set landscape orientation */
+  @page {
+    size: landscape;
+    margin: 1cm;
+  }
+}`;
+
+
 export default function FRAIReport() {
     const router = useRouter();
     const params = useParams();
@@ -63,124 +176,9 @@ export default function FRAIReport() {
 
     const assessmentDate = formatDate(assessmentData.createdAt);
 
-    const handlePrint = () => {
-        const printContents = document.getElementById('printable-report')?.innerHTML;
-        const originalContents = document.body.innerHTML;
-
-        if (printContents) {
-            const printStyles = `
-        body { 
-          font-family: Arial, sans-serif;
-          padding: 20px;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-        table { 
-          width: 100%;
-          border-collapse: separate;
-          border-spacing: 2px;
-        }
-        th, td {
-          border: 1px solid #ccc;
-          padding: 8px;
-        }
-        th {
-          background-color: #1e56b0;
-          color: white;
-          text-align: center;
-        }
-        .header-row {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 20px;
-        }
-        .header-box {
-          background-color: #f9fafb;
-          padding: 16px;
-          border-radius: 8px;
-          width: 48%;
-        }
-        .title {
-          text-align: center;
-          margin-bottom: 24px;
-          font-size: 24px;
-          font-weight: bold;
-        }
-        .score-box {
-          background-color: #1e56b0;
-          color: white;
-          padding: 16px;
-          border-radius: 8px;
-          margin: 24px 0;
-        }
-        .score-grid {
-          display: grid;
-          grid-template-columns: repeat(5, 1fr);
-          gap: 16px;
-          margin-bottom: 24px;
-        }
-        .score-item {
-          background-color: #1f2937;
-          padding: 16px;
-          border-radius: 8px;
-          color: white;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .score-circle {
-          width: 32px;
-          height: 32px;
-          background-color: #22c55e;
-          border-radius: 50%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          font-weight: bold;
-          margin-right: 12px;
-        }
-        .highlighted-cell {
-          background-color: #fef9c3;
-        }
-        .score-wrapper {
-          display: flex;
-          align-items: center;
-        }
-        @media print {
-          @page {
-            size: landscape;
-            margin: 1cm;
-          }
-        }
-      `;
-
-            document.body.innerHTML = `
-        <style>${printStyles}</style>
-        <div>
-          <div class="title">Family Resilience Assessment Instrument</div>
-          
-          <div class="header-row">
-            <div class="header-box">
-              <p style="font-weight: 500;">Date of Initial Assessment/Review:</p>
-              <p style="font-size: 18px;">${assessmentDate}</p>
-            </div>
-            <div class="header-box">
-              <p style="font-weight: 500;">Name of Family Assessed:</p>
-              <p style="font-size: 18px;">${familyName}</p>
-            </div>
-          </div>
-
-          ${printContents}
-        </div>
-      `;
-
-            window.print();
-            document.body.innerHTML = originalContents;
-        }
-    };
-
     return (
         <div className="p-6 max-w-7xl mx-auto">
+            <style dangerouslySetInnerHTML={{ __html: printStyles }} />
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold">Family Resilience Assessment Instrument</h1>
                 <Button

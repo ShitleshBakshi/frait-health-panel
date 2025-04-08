@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+logs/
+*.log
 /frait_health_panel
 /public
 

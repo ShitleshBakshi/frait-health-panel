@@ -5,8 +5,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5a0ba607-dee7-4fd8-a2ed-702ef27c5b39" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../components/frat-report.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../components/frat-report.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../docker-compose.dev.yml" beforeDir="false" afterPath="$PROJECT_DIR$/../docker-compose.dev.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/dataSources/ff13955b-2ae3-407f-8fdb-f513d44700d0.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/ff13955b-2ae3-407f-8fdb-f513d44700d0.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/dataSources/ff13955b-2ae3-407f-8fdb-f513d44700d0/storage_v2/_src_/database/frait_health_backend.0Dhb-w/schema/public.abK9xQ.meta" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/ff13955b-2ae3-407f-8fdb-f513d44700d0/storage_v2/_src_/database/frait_health_backend.0Dhb-w/schema/public.abK9xQ.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />

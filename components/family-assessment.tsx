@@ -352,7 +352,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
             prevAssessmentIdRef.current &&
             assessmentId !== prevAssessmentIdRef.current
         ) {
-            console.log("New assessment for same family - resetting assessment state");
+            
             dispatch(resetAssessment());
             dispatch(startNewAssessment({ familyId }));
             setAssessmentStatus({
@@ -366,9 +366,9 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
             });
         }
 
-        // Case 3: Initial load with assessmentId (viewing existing assessment)
-        else if (mode === "view" && assessmentId && assessmentData) {
-            // Load the assessment into Redux for viewing
+        // Case 3: Initial load with assessmentId (viewing or editing existing assessment)
+        else if ((mode === "view" || mode === "edit") && assessmentId && assessmentData) {
+            // Load the assessment into Redux for viewing or editing
             dispatch(loadAssessment({
                 assessmentId,
                 familyId: assessmentData.familyId,
@@ -379,11 +379,11 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                 supportingParentAssessment: assessmentData.supportingParentAssessment?.map(item => ({
                     id: item.id,
                     level: item.level as AssessmentLevel
-                })),
+                })) || [],
                 childAssessment: assessmentData.childAssessment?.map(item => ({
                     id: item.id,
                     level: item.level as AssessmentLevel
-                })),
+                })) || [],
                 externalInfluenceAssessment: assessmentData.externalInfluenceAssessment.map(item => ({
                     id: item.id,
                     level: item.level as AssessmentLevel
@@ -392,8 +392,8 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
 
             // Set display data
             setMainParentInfo(assessmentData.mainParent);
-            setSupportingParentsInfo(assessmentData.supportingParents);
-            setChildrenInfo(assessmentData.children);
+            setSupportingParentsInfo(assessmentData.supportingParents || []);
+            setChildrenInfo(assessmentData.children || []);
 
             // Mark all sections as completed in view mode
             setAssessmentStatus({
@@ -443,7 +443,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                 })
                 .catch((error) => {
                     // If there's no family details yet, we'll just start with empty state
-                    console.log("No existing family details found or error:", error);
+                    
                 });
         }
     }, [familyId, assessmentId, mode, dispatch]);
@@ -459,8 +459,10 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
         const nextAssessmentNumber = existingAssessments.length + 1;
 
         // Create the new assessment ID in the format familyId_assessmentNumber
-        const assessmentId = `${familyId}_${nextAssessmentNumber}`;
+        // const assessmentId = `${familyId}_${nextAssessmentNumber}`;
+        const updatedAssessmentId = assessmentId ? String(assessmentId) : `${familyId}_${nextAssessmentNumber}`;
         const currentTime = new Date().toISOString();
+
 
         try {
             // First, save the family details to the backend
@@ -468,6 +470,9 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
             if (!familyDetailsSaved) {
                 return; // Stop if family details couldn't be saved
             }
+
+
+
             // First, save the assessment data to the backend
             const saveResult = await dispatch(saveAssessmentToBackend(nextAssessmentNumber)).unwrap();
 
@@ -484,7 +489,7 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
 
 
             const familyAssessment: FamilyAssessment = {
-                id: assessmentId,
+                id: updatedAssessmentId,
                 familyId,
                 mainParent: mainParentInfo!,
                 supportingParents: supportingParentsInfo,
@@ -500,7 +505,6 @@ export function FamilyAssessment({ familyId, assessmentId, mode = "edit"}: Famil
                 updatedAt: currentTime
             }
 
-            console.log("Adding family")
             // Save to Redux family slice
             dispatch(addFamilyAssessment(familyAssessment))
 

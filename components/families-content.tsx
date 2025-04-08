@@ -64,8 +64,7 @@ export function FamiliesContent({
         return true;
     });
     useEffect(() => {
-        console.log("User role:", user?.role);
-        console.log("Assigned families:", getAssignedFamilies());
+        
     }, [user?.role]);
 
     const handleFamilySelect = (family: Family) => {
