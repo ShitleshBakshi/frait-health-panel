@@ -145,48 +145,57 @@ class Mutation:
                 user=None,
             )
 
-    # async def login(
-    #     self,
-    #     info: Info,
-    #     email: str,
-    #     password: str,
-    # ) -> AuthResponse:
-    #     """
-    #     Authenticate user with email and password.
-    #
-    #     :param info: connection info.
-    #     :param email: email of the user.
-    #     :param password: password of the user.
-    #     :return: authentication response with user details if successful.
-    #     """
-    #     dao = UserDAO(info.context.db_connection)
-    #     user = await dao.authenticate_user(email=email, password=password)
-    #
-    #     if user is None:
-    #         return AuthResponse(
-    #             success=False,
-    #             message="Invalid credentials",
-    #             token=None,
-    #             user=None,
-    #         )
-    #
-    #     # Generate JWT tokens
-    #     token = Mutation.create_access_token(
-    #         user_id=user.id,
-    #         email=user.email,
-    #         role=user.role,
-    #     )
-    #
-    #     user_dto = UserModelDTO(
-    #         id=user.id,
-    #         name=user.name,
-    #         email=user.email,
-    #         role=user.role,
-    #     )
-    #
-    #     return AuthResponse(
-    #         success=True,
-    #         token=token,
-    #         message="Login successful",
-    #         user=user_dto,
-    #     )
+    @strawberry.mutation(description="Automatic Windows authentication without login")
+    async def auto_login(self, info: Info) -> AuthResponse:
+        """
+        Automatically authenticate user based on their Windows identity.
+        No password required.
+        """
+        if not settings.ldap_auth_enabled:
+            return AuthResponse(
+                success=False,
+                message="LDAP authentication not enabled",
+                token=None,
+                user=None,
+            )
+
+        try:
+            # Import the auto auth functions
+            from frait_health_backend.web.api.auth.auto_auth import (
+                get_windows_identity,
+                get_user_from_ldap
+            )
+
+            # Get Windows username
+            username = await get_windows_identity(info.context.request)
+
+            # Get user from LDAP using service account
+            user, _ = await get_user_from_ldap(username, db_session=info.context.db_connection)
+
+            # Generate JWT token
+            token = Mutation.create_access_token(
+                user_id=user.id,
+                email=user.email,
+                role=user.role,
+            )
+
+            user_dto = UserModelDTO(
+                id=user.id,
+                name=user.name,
+                email=user.email,
+                role=user.role,
+            )
+
+            return AuthResponse(
+                success=True,
+                token=token,
+                message="Auto-authentication successful",
+                user=user_dto,
+            )
+        except Exception as e:
+            return AuthResponse(
+                success=False,
+                message=f"Auto-authentication error: {str(e)}",
+                token=None,
+                user=None,
+            )
