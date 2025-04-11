@@ -4,6 +4,7 @@ import { Header } from "@/components/header"
 import { Sidebar } from "@/components/sidebar"
 import { DashboardContent } from "@/components/dashboard-content"
 import { withAuth } from "@/components/with-auth"
+import { UserRole } from "@/lib/auth-context"
 
 function DashboardPage() {
     return (
@@ -19,5 +20,11 @@ function DashboardPage() {
     )
 }
 
-export default withAuth(DashboardPage, ["Health Visitor" ,"Assistant Health Visitor", "Manager", "Admin"])
+// Use the UserRole enum for allowed roles
+export default withAuth(DashboardPage, [
+    UserRole.HEALTH_VISITOR,
+    UserRole.ASSISTANT_HEALTH_VISITOR,
+    UserRole.MANAGER,
+    UserRole.ADMIN
+])
 

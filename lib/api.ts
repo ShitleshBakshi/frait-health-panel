@@ -13,7 +13,6 @@ export const GRAPHQL_URL = process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localh
  * @param headers - Optional additional headers
  * @returns Promise with the response data
  */
-import logger from './logger';
 
 export async function fetchGraphQL(
     query: string,
@@ -22,6 +21,14 @@ export async function fetchGraphQL(
 ) {
 
     try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+        if (token) {
+            headers = {
+                ...headers,
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
         const response = await fetch(GRAPHQL_URL, {
             method: 'POST',
             headers: {
@@ -47,6 +54,56 @@ export async function fetchGraphQL(
         throw error;
     }
 }
+
+// === USER AUTHENTICATION API UTILITIES ===
+
+/**
+ * GraphQL mutation for automatic login
+ */
+export const AUTO_LOGIN_MUTATION = `
+  mutation AutoLogin {
+    autoLogin {
+      success
+      message
+      token
+      user {
+        id
+        name
+        email
+        role
+      }
+    }
+  }
+`;
+
+/**
+ * GraphQL query for getting current authenticated user
+ */
+export const GET_CURRENT_USER_QUERY = `
+  query GetCurrentUser {
+    me {
+      id
+      name
+      email
+      role
+    }
+  }
+`;
+
+/**
+ * Attempt automatic login using Windows identity
+ */
+export async function autoLogin() {
+    return fetchGraphQL(AUTO_LOGIN_MUTATION);
+}
+
+/**
+ * Get the current authenticated user
+ */
+export async function getCurrentUser() {
+    return fetchGraphQL(GET_CURRENT_USER_QUERY);
+}
+
 
 // === FAMILY DETAILS API UTILITIES ===
 

@@ -12,7 +12,7 @@ export const FIXED_ASSISTANT_ID = "user2";
 interface UserState {
     id: string
     username: string
-    role: UserRole
+    role: UserRole | string
     healthBoard: string
     assignedFamilies: Record<string, string[]> // Map assistantId to array of familyIds
     pendingAssessments: PendingAssessment[]

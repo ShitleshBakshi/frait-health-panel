@@ -10,10 +10,13 @@ export function withAuth<P extends object>(
     allowedRoles: UserRole[]
 ) {
     return function AuthenticatedComponent(props: any) {
-        const { user } = useAuth()
+        const { user, isLoading } = useAuth()
         const router = useRouter()
 
         useEffect(() => {
+
+            if (isLoading) return
+
             // If there's no user, redirect to the role selection page
             if (!user) {
                 router.push("/")
@@ -24,7 +27,12 @@ export function withAuth<P extends object>(
             if (user.role && !allowedRoles.includes(user.role)) {
                 router.push("/unauthorized")
             }
-        }, [user, router])
+        }, [user, router, isLoading])
+
+        // Show nothing during loading state
+        if (isLoading) {
+            return null
+        }
 
         // Don't render anything during the authentication check
         // This prevents the flash of unauthorized content
@@ -48,26 +56,30 @@ export function withAuth<P extends object>(
  * @param requiredRole A specific role required for access
  * @returns Object with isAuthorized flag to check in your component
  */
-export function useRoleAuth(requiredRole: UserRole | string) {
-    const { user } = useAuth()
+export function useRoleAuth(requiredRole: UserRole ) {
+    const { user, isLoading } = useAuth()
     const router = useRouter()
 
     useEffect(() => {
+
+        // Don't redirect during loading
+        if (isLoading) return
+
         // If no user, redirect to login
-        if (!user) {
+        if (!isLoading && !user) {
             router.push("/")
             return
         }
 
         // If wrong role, redirect to unauthorized
-        if (user.role !== requiredRole) {
+        if (!isLoading && user && user.role !== requiredRole) {
             router.push("/unauthorized")
         }
-    }, [user, router, requiredRole])
+    }, [user, router, requiredRole, isLoading])
 
     return {
         isAuthorized: user && user.role === requiredRole,
-        isLoading: !user
+        isLoading
     }
 }
 
@@ -77,25 +89,28 @@ export function useRoleAuth(requiredRole: UserRole | string) {
  * @param allowedRoles Array of roles that can access the component
  * @returns Object with isAuthorized flag to check in your component
  */
-export function useMultiRoleAuth(allowedRoles: UserRole[] | string[]) {
-    const { user } = useAuth()
+export function useMultiRoleAuth(allowedRoles: UserRole[]) {
+    const { user, isLoading } = useAuth()
     const router = useRouter()
 
     useEffect(() => {
+        // Don't redirect during loading
+        if (isLoading) return
+
         // If no user, redirect to login
-        if (!user) {
+        if (!isLoading && !user) {
             router.push("/")
             return
         }
 
         // If user has a role that's not in allowed roles, redirect
-        if (user.role && !allowedRoles.includes(user.role)) {
+        if (!isLoading && user && user.role && !allowedRoles.includes(user.role)) {
             router.push("/unauthorized")
         }
-    }, [user, router, allowedRoles])
+    }, [user, router, allowedRoles, isLoading])
 
     return {
         isAuthorized: user && user.role ? allowedRoles.includes(user.role) : false,
-        isLoading: !user
+        isLoading
     }
 }

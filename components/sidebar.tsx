@@ -13,8 +13,6 @@ const navigation = [
 ]
 
 const userNavigation = [
-  { name: "My profile", href: "/profile", icon: User, roles: ["Health Visitor", "Assistant Health Visitor", "Manager", "Admin"] },
-  { name: "Change your password", href: "/change-password", icon: Key, roles: ["Health Visitor", "Assistant Health Visitor", "Manager", "Admin"] },
 ]
 
 export function Sidebar() {
@@ -50,21 +48,6 @@ export function Sidebar() {
 
         <div className="space-y-2">
           <p className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">User area</p>
-          {userNavigation
-              .filter((item) => user && item.roles.includes(user.role))
-              .map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                pathname === item.href ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-100",
-              )}
-            >
-              <item.icon className="h-5 w-5 shrink-0" />
-              {item.name}
-            </Link>
-          ))}
           <button
               onClick={handleLogout}
               className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-700 hover:bg-gray-100 w-full text-left"

@@ -3,7 +3,6 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 import {useDispatch, useSelector} from "react-redux"
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
 import {RootState} from "@/lib/store";
 import {
     setUser,
@@ -13,14 +12,21 @@ import {
     removeAssessment,
     FIXED_ASSISTANT_ID
 } from "@/lib/slices/userSlice"
+import { autoLogin, getCurrentUser } from "@/lib/api"
 
-// Define the User Role type for the application
-export type UserRole = "Health Visitor" | "Assistant Health Visitor" | "Manager" | "Admin"
+// Define the User Role type to exactly match the backend
+export enum UserRole {
+    ADMIN = "Admin",
+    MANAGER = "Manager",
+    HEALTH_VISITOR = "Health Visitor",
+    ASSISTANT_HEALTH_VISITOR = "Assistant Health Visitor"
+}
 
 // User interface for auth context
 export type User = {
     id: string
     username: string
+    email?: string
     role: UserRole
     healthBoard: string
     // For Assistant Health Visitors, track their assigned families
@@ -31,8 +37,9 @@ export type User = {
 // Define the interface for auth context
 type AuthContextType = {
     user: User | null
-    selectRole: (role: string) => Promise<User>
     logout: () => void
+    isLoading: boolean
+    error: string | null
     assignFamily: (familyId: string, assistantId: string) => void
     isAssignedFamily: (familyId: string) => boolean
     getAssignedFamilies: () => string[]
@@ -56,61 +63,83 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const dispatch = useDispatch()
     // Get user data from Redux store
     const reduxUser = useSelector((state: RootState) => state.user)
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
     // Create user object if we have an ID
     const user = reduxUser.id ? {
         id: reduxUser.id,
         username: reduxUser.username,
-        role: reduxUser.role,
+        role: reduxUser.role as UserRole,
         healthBoard: reduxUser.healthBoard
-    } : null;
+    }: null;
 
-    const ASSISTANT_USERNAME = "Sarah Johnson"
 
-    const selectRole = async (role: string): Promise<User> => {
-        const roleMap: Record<string, UserRole> = {
-            "Health Visitor": "Health Visitor",
-            "Assistant Health Visitor": "Assistant Health Visitor",
-            "Manager": "Manager",
-            "Admin": "Admin"
+    // Auto login when the application starts
+    useEffect(() => {
+        const attemptLogin = async () => {
+            try {
+                setIsLoading(true)
+
+                // Try to get user from token first if available
+                const token = localStorage.getItem('auth_token')
+                if (token) {
+                    try {
+                        const userData = await getCurrentUser();
+
+
+                        if (userData?.me) {
+                            dispatch(setUser({
+                                id: userData.me.id.toString(),
+                                username: userData.me.name,
+                                role: userData.me.role,
+                                healthBoard: "Powys Health Board"
+                            }))
+                            setError(null)
+                            setIsLoading(false)
+                            return
+                        }
+                    } catch (error) {
+                        // Token might be invalid, continue with auto login
+                        console.error("Error verifying token:", error)
+                        localStorage.removeItem('auth_token')
+                    }
+                }
+
+                // If token not available or invalid, try auto login
+                const loginData = await autoLogin();
+
+                if (loginData?.autoLogin?.success) {
+                    const { token, user: userData } = loginData.autoLogin
+
+                    // Save token to localStorage
+                    localStorage.setItem('auth_token', token)
+
+                    // Update Redux store
+                    dispatch(setUser({
+                        id: userData.id.toString(),
+                        username: userData.name,
+                        role: userData.role,
+                        healthBoard: "Powys Health Board"
+                    }))
+
+                    setError(null)
+                } else {
+                    setError(loginData?.autoLogin?.message || "Authentication failed")
+                }
+            } catch (error) {
+                console.error("Auto login error:", error)
+                setError("Failed to authenticate. Please try again later.")
+            } finally {
+                setIsLoading(false)
+            }
         }
 
-        if (!roleMap[role]) {
-            throw new Error("Invalid role selected")
-        }
-
-        // Use fixed ID for Assistant Health Visitor
-        let userId: string;
-        let username: string;
-
-        if (role === "Assistant Health Visitor") {
-            userId = FIXED_ASSISTANT_ID;
-            username = ASSISTANT_USERNAME;
-        } else {
-            // Generate random ID for other roles
-            userId = `user_${Math.floor(Math.random() * 10000)}`;
-            username = `Example ${role}`;
-        }
-
-        const newUser: User = {
-            id: userId,
-            username: `Example ${role}`,
-            role: roleMap[role],
-            healthBoard: "Swansea Uni Health Board"
-        }
-
-        // Update Redux store only
-        dispatch(setUser({
-            id: newUser.id,
-            username: newUser.username,
-            role: newUser.role,
-            healthBoard: newUser.healthBoard
-        }))
-
-        return newUser
-    }
+        attemptLogin()
+    }, [dispatch])
 
     const logout = () => {
+        localStorage.removeItem('auth_token')
         // Clear Redux store only
         dispatch(clearUser())
     }
@@ -180,8 +209,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         <AuthContext.Provider
             value={{
                 user,
-                selectRole,
                 logout,
+                isLoading,
+                error,
                 assignFamily,
                 isAssignedFamily,
                 getAssignedFamilies,

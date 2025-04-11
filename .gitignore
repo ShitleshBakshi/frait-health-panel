@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+app/auth-test
+components/auth-test-utility.tsx
 logs/
 *.log
 /frait_health_panel

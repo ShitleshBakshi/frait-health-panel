@@ -2,78 +2,45 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertTriangle } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
+import { AuthLoading } from "@/components/auth-loading"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
-export default function UnauthorizedPage() {
+export default function RootPage() {
     const router = useRouter()
-    const { user, logout } = useAuth()
+    const { user, isLoading, error } = useAuth()
 
-    // If no user, redirect to home/login
+    // Redirect to dashboard if authenticated
     useEffect(() => {
-        if (!user) {
-            router.push("/login")
+        if (!isLoading && user) {
+            router.push("/dashboard")
         }
-    }, [user, router])
+    }, [user, router, isLoading])
 
-    const handleLogout = () => {
-        logout()
-        router.push("/login")
+    // Show loading state while authenticating
+    if (isLoading) {
+        return <AuthLoading />
     }
 
-    const handleGoHome = () => {
-        router.push("/dashboard")
-    }
-
-    return (
-        <div className="min-h-screen flex flex-col">
-            {/* Header */}
-            <header className="bg-[#1e2756] text-white">
-                <div className="container mx-auto px-4">
-                    <div className="flex items-center h-16">
-                        <div className="h-10 w-24 relative">
-                            <div className="text-xl font-bold">FRAIT</div>
-                        </div>
+    // Show error if authentication failed
+    if (error) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-md w-full space-y-8">
+                    <div>
+                        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Authentication Error</h2>
                     </div>
+                    <Alert variant="destructive">
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                    <p className="text-center text-sm text-gray-600">
+                        Please contact your system administrator for assistance.
+                    </p>
                 </div>
-            </header>
+            </div>
+        )
+    }
 
-            {/* Main Content */}
-            <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
-                <Card className="w-full max-w-md">
-                    <CardHeader className="text-center">
-                        <div className="flex justify-center mb-4">
-                            <AlertTriangle className="h-12 w-12 text-orange-500" />
-                        </div>
-                        <CardTitle className="text-2xl font-bold">Unauthorized Access</CardTitle>
-
-                            You don't have permission to access this page with your current role: {user?.role}
-
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-gray-600 text-center">
-                            Please select a different role or return to the dashboard.
-                        </p>
-                        <div className="flex flex-col space-y-2">
-                            <Button
-                                onClick={handleGoHome}
-                                className="w-full bg-[#1e56b0] hover:bg-[#1a4c9e]"
-                            >
-                                Return to Dashboard
-                            </Button>
-                            <Button
-                                onClick={handleLogout}
-                                variant="outline"
-                                className="w-full"
-                            >
-                                Change Role
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            </main>
-        </div>
-    )
+    // Should not reach here, but in case it does, show loading
+    return <AuthLoading />
 }

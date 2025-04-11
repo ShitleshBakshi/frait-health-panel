@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation"
 import { Button } from "./ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu"
 import { ChevronDown } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
 
 export function Header() {
   const router = useRouter()
+  const { user, logout } = useAuth()
 
   const handleLogout = () => {
     router.push("/")
@@ -29,13 +31,10 @@ export function Header() {
           <h1 className="text-xl font-medium hidden md:block">Health visitor control panel</h1>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="ghost" className="text-white hover:text-white/90 hover:bg-white/10">
-            Cymraeg
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="text-white hover:text-white/90 hover:bg-white/10">
-                Shaneth <ChevronDown className="ml-2 h-4 w-4" />
+                {user?.username} <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
