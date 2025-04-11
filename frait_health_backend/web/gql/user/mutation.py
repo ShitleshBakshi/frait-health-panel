@@ -199,3 +199,56 @@ class Mutation:
                 token=None,
                 user=None,
             )
+
+
+    ### For Testing Purpose Only ###
+    @strawberry.mutation(description="Login with a specific user ID for testing")
+    async def login_with_user_id(
+        self,
+        info: Info,
+        userId: int,
+    ) -> AuthResponse:
+        """
+        Authenticate with a specific user ID for testing purposes.
+        This bypasses Windows authentication entirely and should NOT be used in production.
+        """
+        try:
+            # Get the user directly from the database
+            dao = UserDAO(info.context.db_connection)
+            user = await dao.get_user_by_id(user_id=userId)
+
+            if not user:
+                return AuthResponse(
+                    success=False,
+                    message=f"User with ID {userId} not found",
+                    token=None,
+                    user=None,
+                )
+
+            # Generate JWT token using the existing method
+            token = self.create_access_token(
+                user_id=user.id,
+                email=user.email,
+                role=user.role,
+            )
+
+            user_dto = UserModelDTO(
+                id=user.id,
+                name=user.name,
+                email=user.email,
+                role=user.role,
+            )
+
+            return AuthResponse(
+                success=True,
+                token=token,
+                message="Test authentication successful",
+                user=user_dto,
+            )
+        except Exception as e:
+            return AuthResponse(
+                success=False,
+                message=f"Authentication error: {str(e)}",
+                token=None,
+                user=None,
+            )

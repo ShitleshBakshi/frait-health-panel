@@ -15,26 +15,6 @@ class UserDAO:
     def __init__(self, session: AsyncSession = Depends(get_db_session)) -> None:
         self.session = session
 
-    # def _hash_password(self, password: str) -> str:
-    #     """
-    #     Hash password using bcrypt.
-    #
-    #     :param password: password to hash
-    #     :return: hashed password
-    #     """
-    #     salt = bcrypt.gensalt()
-    #     hashed = bcrypt.hashpw(password.encode(), salt)
-    #     return hashed.decode()
-    #
-    # def _verify_password(self, password: str, hashed_password: str) -> bool:
-    #     """
-    #     Verify password against hashed password.
-    #
-    #     :param password: password to verify
-    #     :param hashed_password: hashed password to verify against
-    #     :return: True if password is correct
-    #     """
-    #     return bcrypt.checkpw(password.encode(), hashed_password.encode())
 
     async def create_user(
         self,

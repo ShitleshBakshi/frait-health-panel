@@ -60,7 +60,7 @@ class Query:
         :param offset: offset of user objects, defaults to 0.
         :return: list of user objects from database.
         """
-        dao = UserDAO()
+        dao = UserDAO(session=info.context.db_connection)
         users = await dao.get_all_users(limit=limit, offset=offset)
         return [
             UserModelDTO(
@@ -93,7 +93,7 @@ class Query:
         :param role: role of the user.
         :return: list of filtered user objects from database.
         """
-        dao = UserDAO()
+        dao = UserDAO(session=info.context.db_connection)
         from frait_health_backend.db.models.user_model import UserRole
 
         user_role = UserRole(role) if role else None
