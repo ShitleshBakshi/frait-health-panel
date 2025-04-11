@@ -13,7 +13,7 @@ import type { FamilyAssessment } from "@/type/assessment"
 import {useToast} from "@/hooks/use-toast";
 import {NewFamilyForm} from "@/components/NewFamilyForm";
 import {Alert, AlertDescription} from "@/components/ui/alert";
-import { useAuth } from "@/lib/auth-context"
+import {useAuth, UserRole} from "@/lib/auth-context"
 import { FamilyAssignmentModal } from "./FamilyAssignmentModal"
 import { AssessmentApprovalModal } from "./AssessmentApprovalModal"
 
@@ -53,11 +53,10 @@ export function FamiliesContent({
         if (!matchesSearch) return false;
 
         // For Assistant Health Visitors, only show assigned families
-        if (user?.role === "Assistant Health Visitor") {
+        if (user?.role === UserRole.ASSISTANT_HEALTH_VISITOR) {
 
-            const assignedFamilies = getAssignedFamilies()
+            const assignedFamilies = getAssignedFamilies();
             return assignedFamilies.includes(family.id.toString());
-            // return isAssignedFamily(family.id.toString());
 
         }
 

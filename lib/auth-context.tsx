@@ -1,18 +1,17 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import {createContext, useContext, useEffect, useState} from "react"
 import {useDispatch, useSelector} from "react-redux"
 import {RootState} from "@/lib/store";
 import {
-    setUser,
-    clearUser,
-    assignFamilyToAssistant,
     addPendingAssessment as addPendingAssessmentAction,
+    assignFamilyToAssistant,
+    clearUser,
     removeAssessment,
-    FIXED_ASSISTANT_ID
+    setUser
 } from "@/lib/slices/userSlice"
-import { autoLogin, getCurrentUser } from "@/lib/api"
+import {autoLogin, getCurrentUser} from "@/lib/api"
 
 // Define the User Role type to exactly match the backend
 export enum UserRole {
@@ -153,29 +152,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!user) return false
 
         // Health Visitors and others can see all families
-        if (user.role !== "Assistant Health Visitor") return true
+        if (user.role !== UserRole.ASSISTANT_HEALTH_VISITOR) return true;
 
-        // For Assistant Health Visitors, check if this family is assigned
-        return !!reduxUser.assignedFamilies[FIXED_ASSISTANT_ID]?.includes(familyId);
+        // For Assistant Health Visitors, check if this family is assigned to them
+        return !!reduxUser.assignedFamilies[user.id]?.includes(familyId);
 
     }
 
     const getAssignedFamilies = () => {
-        // if (!user) return [];
-        //
-        // // Assistant Health Visitors only see their assigned families
-        // if (user.role === "Assistant Health Visitor") {
-        //     // Get only families assigned to the CURRENT Assistant Health Visitor
-        //     const currentUserAssignments = reduxUser.assignedFamilies[user.id] || [];
-        //
-        //     // Make sure we're returning an array
-        //     return Array.isArray(currentUserAssignments)
-        //         ? currentUserAssignments
-        //         : [];
-        // }
+        if (!user) return [];
 
-        // Others can see all families
-        return reduxUser.assignedFamilies[FIXED_ASSISTANT_ID] || [];
+        // Assistant Health Visitors only see their assigned families
+        if (user.role === UserRole.ASSISTANT_HEALTH_VISITOR) {
+            // Get only families assigned to the CURRENT Assistant Health Visitor
+            return reduxUser.assignedFamilies[user.id] || [];
+        }
+
+        // Health Visitors and managers see all assigned families across all assistants
+        if (user.role === UserRole.HEALTH_VISITOR || user.role === UserRole.MANAGER) {
+            const allAssignedFamilies: string[] = [];
+            Object.values(reduxUser.assignedFamilies).forEach(families => {
+                allAssignedFamilies.push(...families);
+            });
+            return [...new Set(allAssignedFamilies)]; // Remove duplicates
+        }
+        return [];
     }
 
     // Assessment approval functions using Redux

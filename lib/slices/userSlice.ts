@@ -7,7 +7,6 @@ interface PendingAssessment {
     assistantId: string
 }
 
-export const FIXED_ASSISTANT_ID = "user2";
 
 interface UserState {
     id: string
@@ -23,9 +22,7 @@ const initialState: UserState = {
     username: "",
     role: "Assistant Health Visitor" as UserRole,
     healthBoard: "",
-    assignedFamilies: {
-        [FIXED_ASSISTANT_ID]: []
-    },
+    assignedFamilies: {},
     pendingAssessments: []
 }
 
@@ -60,9 +57,7 @@ const userSlice = createSlice({
             familyId: string;
             assistantId: string;
         }>) => {
-            const { familyId } = action.payload
-
-            const assistantId = FIXED_ASSISTANT_ID
+            const { familyId, assistantId } = action.payload
 
             // Initialize the array if it doesn't exist
             if (!state.assignedFamilies[assistantId]) {

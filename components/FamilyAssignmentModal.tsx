@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { assignFamilyToAssistant } from "@/lib/slices/userSlice"
 import type { RootState } from "@/lib/store"
 import type { Family } from "@/lib/slices/familySlice"
+import {fetchGraphQL} from "@/lib/api";
 
 // Interface for Assistant Health Visitor user
 interface AssistantUser {
@@ -36,12 +37,7 @@ export function FamilyAssignmentModal({
     const { toast } = useToast()
 
     // Get all users from redux state - in a real app, this would be filtered by role in the backend
-    // For now, we'll use mock data for Assistant Health Visitors
-    const assistantHealthVisitors = [
-        { id: "user2", username: "Assistant Smith", role: "Assistant Health Visitor" },
-        { id: "asst_2", username: "Assistant Johnson", role: "Assistant Health Visitor" },
-        { id: "asst_3", username: "Assistant Williams", role: "Assistant Health Visitor" },
-    ];
+    const [assistantHealthVisitors, setAssistantHealthVisitors] = useState<AssistantUser[]>([]);
 
     // Get families from Redux store
     const families = useSelector((state: RootState) => state.family.families)
@@ -55,11 +51,42 @@ export function FamilyAssignmentModal({
     // Reset selection when modal opens
     useEffect(() => {
         if (open) {
-            setSelectedFamilies([])
-            setSelectedAssistant("")
-            setSearchTerm("")
+            // Fetch Assistant Health Visitors from backend
+            const fetchAssistants = async () => {
+                try {
+                    const QUERY = `
+                        query GetAssistantHealthVisitors {
+                          filterUsers(role: "Assistant Health Visitor") {
+                            id
+                            name
+                            email
+                            role
+                          }
+                        }
+          `;
+
+                    const result = await fetchGraphQL(QUERY);
+
+                    if (result.filterUsers) {
+                        setAssistantHealthVisitors(result.filterUsers.map((user: any) => ({
+                            id: user.id.toString(),
+                            username: user.name,
+                            role: user.role
+                        })));
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch assistant health visitors:", error);
+                    // Fallback to mock data if needed
+                }
+            };
+
+            fetchAssistants();
+            setSelectedFamilies([]);
+            setSelectedAssistant("");
         }
-    }, [open])
+    }, [open]);
+
+
 
     const handleAssign = () => {
         if (!selectedAssistant) {

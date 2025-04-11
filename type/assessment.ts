@@ -53,6 +53,7 @@ export interface FamilyAssessment {
     supportingParentAssessment: AssessmentItem[]
     childAssessment: AssessmentItem[]
     externalInfluenceAssessment: AssessmentItem[]
+    assignedTo?: string;
 }
 
 // Assessment store state interface (for Zustand)
