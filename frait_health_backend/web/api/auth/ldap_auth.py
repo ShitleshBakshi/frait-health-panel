@@ -1,7 +1,7 @@
 """LDAP authentication handlers and utilities."""
 
 from typing import Optional, Dict, Any, List, Tuple
-import ldap
+import ldap3
 from fastapi import HTTPException
 
 from frait_health_backend.settings import Settings
