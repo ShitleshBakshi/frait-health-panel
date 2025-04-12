@@ -1,9 +1,10 @@
 "use client"
 
-import { Header } from "@/components/header"
-import { Sidebar } from "@/components/sidebar"
-import { FamiliesContent } from "@/components/families-content"
-import { withAuth } from "@/components/with-auth"
+import {Header} from "@/components/header"
+import {Sidebar} from "@/components/sidebar"
+import {FamiliesContent} from "@/components/families-content"
+import {withAuth} from "@/components/with-auth"
+import {UserRole} from "@/lib/auth-context";
 
 function FamiliesPage() {
     return (
@@ -19,5 +20,5 @@ function FamiliesPage() {
     )
 }
 
-export default withAuth(FamiliesPage, ["Health Visitor" ,"Assistant Health Visitor", "Manager", "Admin"])
+export default withAuth(FamiliesPage, [UserRole.HEALTH_VISITOR, UserRole.ASSISTANT_HEALTH_VISITOR, UserRole.MANAGER, UserRole.ADMIN])
 

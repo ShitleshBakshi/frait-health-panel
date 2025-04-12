@@ -5,18 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5a0ba607-dee7-4fd8-a2ed-702ef27c5b39" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/../app/auth-test/page.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../components/auth-loading.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../app/dashboard/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../app/dashboard/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../app/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../app/login/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../app/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../components/header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../components/header.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../components/role-selector.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../components/with-auth.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../components/with-auth.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../lib/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../lib/api.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../lib/auth-context.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../lib/auth-context.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../lib/slices/userSlice.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../lib/slices/userSlice.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

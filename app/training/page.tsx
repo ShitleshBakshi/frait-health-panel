@@ -1,9 +1,10 @@
 "use client"
 
-import { Header } from "@/components/header"
-import { Sidebar } from "@/components/sidebar"
-import { TrainingContent } from "@/components/training-content"
-import { withAuth } from "@/components/with-auth"
+import {Header} from "@/components/header"
+import {Sidebar} from "@/components/sidebar"
+import {TrainingContent} from "@/components/training-content"
+import {withAuth} from "@/components/with-auth"
+import {UserRole} from "@/lib/auth-context";
 
 function TrainingPage() {
     return (
@@ -19,5 +20,5 @@ function TrainingPage() {
     )
 }
 
-export default withAuth(TrainingPage, ["Health Visitor" ,"Assistant Health Visitor", "Manager", "Admin"])
+export default withAuth(TrainingPage, [UserRole.HEALTH_VISITOR, UserRole.ASSISTANT_HEALTH_VISITOR, UserRole.MANAGER, UserRole.ADMIN])
 
