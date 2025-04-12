@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 
-import ldap
+import ldap3
 from fastapi import HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 

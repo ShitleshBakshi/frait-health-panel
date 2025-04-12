@@ -3,7 +3,7 @@
 import os
 from typing import Optional
 
-import ldap
+import ldap3
 from fastapi import HTTPException, Request
 
 from frait_health_backend.settings import Settings
