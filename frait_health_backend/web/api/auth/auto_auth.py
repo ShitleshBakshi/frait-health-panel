@@ -3,7 +3,7 @@
 import os
 from typing import Optional
 
-import ldap3
+from ldap3.core.exceptions import LDAPException, LDAPBindError
 from fastapi import HTTPException, Request
 
 from frait_health_backend.settings import Settings
@@ -82,9 +82,10 @@ async def get_user_from_ldap(username: str, db_session=None) -> UserModel:
                 raise ValueError("LDAP service account credentials not configured")
 
             print(f"Binding with service account: {service_account}")
-            conn.simple_bind_s(service_account, service_password)
+            if not conn.bind(user=service_account, password=service_password):
+                raise LDAPBindError("Invalid service account credentials")
 
-        except ldap.INVALID_CREDENTIALS:
+        except LDAPBindError:
             raise HTTPException(
                 status_code=401,
                 detail="Invalid service account credentials",

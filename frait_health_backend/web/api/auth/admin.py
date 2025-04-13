@@ -2,7 +2,8 @@
 
 from typing import List, Optional
 
-import ldap3
+from ldap3 import Server, Connection, ALL, SUBTREE
+from ldap3.core.exceptions import LDAPException
 from fastapi import HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -40,7 +41,8 @@ async def get_ad_user_details(username: str) -> dict:
         if not service_account or not service_password:
             raise ValueError("LDAP service account credentials not configured")
 
-        conn.simple_bind_s(service_account, service_password)
+        if not conn.bind(user=service_account, password=service_password):
+            raise LDAPException("Failed to bind with service account")
 
         # Search for the user
         user_dn, attributes = await search_ldap_user(conn, username)
@@ -92,7 +94,7 @@ async def initialize_system_with_admin(
             email=admin_details["email"] or f"{admin_username}@fraithealth.com",
             external_id=admin_username,
             role=UserRole.ADMIN,  # Force admin role
-            identity_provider="ldap",
+            identity_provider="ldap3",
             sso_metadata=admin_details["sso_metadata"]
         )
 
@@ -182,7 +184,8 @@ async def admin_get_users_from_ad(
         if not service_account or not service_password:
             raise ValueError("LDAP service account credentials not configured")
 
-        conn.simple_bind_s(service_account, service_password)
+        if not conn.bind(user=service_account, password=service_password):
+            raise LDAPException("Failed to bind with service account")
 
         # Create search filter
         if filter_term:
@@ -193,27 +196,34 @@ async def admin_get_users_from_ad(
             search_filter = "(objectClass=user)"
 
         # Perform the search
-        result = conn.search_s(
-            settings.ldap_search_base,
-            ldap.SCOPE_SUBTREE,
-            search_filter,
-            ["sAMAccountName", "displayName", "mail", "memberOf"],
-            sizelimit=limit
+        conn.search(
+            search_base=settings.ldap_search_base,
+            search_filter=search_filter,
+            search_scope=SUBTREE,
+            attributes=["sAMAccountName", "displayName", "mail", "memberOf"],
+            size_limit=limit
         )
 
         # Process results
         users = []
-        for user_dn, attributes in result:
+        for entry in conn.entries:
             # Skip non-user objects
-            if "sAMAccountName" not in attributes:
+            if "sAMAccountName" not in entry:
                 continue
 
             # Get username
-            username_attr = attributes["sAMAccountName"]
-            if not username_attr or not isinstance(username_attr, list) or not username_attr[0]:
+            username_attr = entry["sAMAccountName"].values
+            if not username_attr or not username_attr:
                 continue
 
-            username = username_attr[0].decode() if isinstance(username_attr[0], bytes) else username_attr[0]
+            username = username_attr[0]
+            if isinstance(username, bytes):
+                username = username.decode()
+
+            # Convert entry to attributes dict for compatibility
+            attributes = {}
+            for attr_name in entry.entry_attributes:
+                attributes[attr_name] = entry[attr_name].values
 
             # Process attributes
             name, email, role, _ = process_user_attributes(attributes, username)

@@ -1,7 +1,8 @@
 """LDAP authentication handlers and utilities."""
 
 from typing import Optional, Dict, Any, List, Tuple
-import ldap3
+from ldap3 import Server, Connection, ALL, SUBTREE
+from ldap3.core.exceptions import LDAPException, LDAPBindError
 from fastapi import HTTPException
 
 from frait_health_backend.settings import Settings
@@ -13,11 +14,11 @@ settings = Settings()
 def get_ldap_connection():
     """Establish connection to LDAP server."""
     try:
-        conn = ldap.initialize(settings.ldap_server_url)
-        conn.protocol_version = ldap.VERSION3
-        conn.set_option(ldap.OPT_REFERRALS, 0)
+        server = Server(settings.ldap_server_url, get_info=ALL)
+        conn = Connection(server)
+
         return conn
-    except ldap.LDAPError as e:
+    except LDAPException as e:
         raise HTTPException(
             status_code=500,
             detail=f"Failed to connect to LDAP server: {str(e)}",
@@ -120,21 +121,26 @@ async def search_ldap_user(conn, username: str) -> Tuple[str, Dict[str, Any]]:
     search_filter = f"(&(objectClass=user)(sAMAccountName={username}))"
 
     # Perform the search
-    result = conn.search_s(
-        settings.ldap_search_base,
-        ldap.SCOPE_SUBTREE,
-        search_filter,
-        ["memberOf", "mail", "displayName"],
+    conn.search(
+        search_base=settings.ldap_search_base,
+        search_filter=search_filter,
+        search_scope=SUBTREE,
+        attributes=["memberOf", "mail", "displayName"],
     )
 
-    if not result:
+    if not conn.entries or len(conn.entries) == 0:
         print("User found in AD but no attributes returned")
         raise HTTPException(
             status_code=401,
             detail="User not found in Active Directory",
         )
 
-    user_dn, attributes = result[0]
+    user_entry = conn.entries[0]
+    user_dn = user_entry.entry_dn
+
+    attributes = {}
+    for attr_name in user_entry.entry_attributes:
+        attributes[attr_name] = user_entry[attr_name].values
     print(f"Found user DN: {user_dn}")
 
     return user_dn, attributes
@@ -158,13 +164,13 @@ async def authenticate_ldap_user(username: str, password: str, db_session=None) 
         for bind_format in bind_formats:
             try:
                 print(f"Attempting LDAP bind with: {bind_format}")
-                conn.simple_bind_s(bind_format, password)
-                bind_successful = True
-                print(f"Bind successful with: {bind_format}")
-                break
-            except ldap.INVALID_CREDENTIALS:
+                if conn.bind(user=bind_format, password=password):
+                    bind_successful = True
+                    print(f"Bind successful with: {bind_format}")
+                    break
+            except LDAPBindError:
                 continue
-            except ldap.LDAPError as e:
+            except LDAPException as e:
                 bind_error = e
                 continue
 
@@ -172,7 +178,7 @@ async def authenticate_ldap_user(username: str, password: str, db_session=None) 
             if bind_error:
                 raise bind_error
             else:
-                raise ldap.INVALID_CREDENTIALS()
+                raise LDAPBindError("Invalid credentials")
 
         # Search for user in AD
         user_dn, attributes = await search_ldap_user(conn, username)
@@ -185,13 +191,13 @@ async def authenticate_ldap_user(username: str, password: str, db_session=None) 
 
         return user
 
-    except ldap.INVALID_CREDENTIALS:
+    except LDAPBindError:
         print("Invalid LDAP credentials")
         raise HTTPException(
             status_code=401,
             detail="Invalid LDAP credentials",
         )
-    except ldap.LDAPError as e:
+    except LDAPException as e:
         print(f"LDAP error: {str(e)}")
         raise HTTPException(
             status_code=401,
