@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     log_level: LogLevel = LogLevel.INFO
 
     # LDAP Authentication settings
-    ldap_auth_enabled: bool = True
+    ldap_auth_enabled: bool = False
 
     # LDAP Settings
     ldap_server_url: str = "ldap://34.229.200.54"
@@ -65,6 +65,10 @@ class Settings(BaseSettings):
     # Windows Authentication Settings
     windows_auth_enabled: bool = False
     windows_auth_provider: str = "windows_ad"
+
+
+    default_role: str = "Health Visitor"
+    bypass_authentication: bool = True
 
     # JWT settings
     jwt_secret_key: str = "your_secret_key_here"  # Change in production

@@ -121,12 +121,22 @@ async def search_ldap_user(conn, username: str) -> Tuple[str, Dict[str, Any]]:
     search_filter = f"(&(objectClass=user)(sAMAccountName={username}))"
 
     # Perform the search
-    conn.search(
-        search_base=settings.ldap_search_base,
-        search_filter=search_filter,
-        search_scope=SUBTREE,
-        attributes=["memberOf", "mail", "displayName"],
-    )
+    try:
+        # First try with standard parameters
+        conn.search(
+            search_base=settings.ldap_search_base,
+            search_filter=search_filter,
+            search_scope=SUBTREE,
+            attributes=["memberOf", "mail", "displayName"],
+        )
+    except TypeError:
+        # If that fails, try with positional parameters
+        conn.search(
+            settings.ldap_search_base,
+            search_filter,
+            SUBTREE,
+            attributes=["memberOf", "mail", "displayName"],
+        )
 
     if not conn.entries or len(conn.entries) == 0:
         print("User found in AD but no attributes returned")
@@ -149,59 +159,88 @@ async def authenticate_ldap_user(username: str, password: str, db_session=None) 
     """Authenticate user against LDAP server and verify user exists in database."""
     conn = get_ldap_connection()
 
-    # Try multiple username formats
-    bind_formats = [
-        f"{username}@{settings.ldap_domain.lower()}.local",
-        f"{settings.ldap_domain}\\{username}",
-        username
-    ]
-
     try:
-        # First try authenticating with various username formats
-        bind_successful = False
-        bind_error = None
+        # Use the specific format that worked in testing
+        bind_format = f"{username}@{settings.ldap_domain.lower()}.local"
+        print(f"Attempting LDAP bind with: {bind_format}")
 
-        for bind_format in bind_formats:
-            try:
-                print(f"Attempting LDAP bind with: {bind_format}")
-                if conn.bind(user=bind_format, password=password):
-                    bind_successful = True
-                    print(f"Bind successful with: {bind_format}")
-                    break
-            except LDAPBindError:
-                continue
-            except LDAPException as e:
-                bind_error = e
-                continue
+        # Use positional parameters for binding (no named parameters)
+        if not conn.bind(bind_format, password):
+            print(f"Bind failed: {conn.result}")
+            raise LDAPBindError("Invalid credentials")
 
-        if not bind_successful:
-            if bind_error:
-                raise bind_error
-            else:
-                raise LDAPBindError("Invalid credentials")
+        print(f"Bind successful with: {bind_format}")
 
         # Search for user in AD
-        user_dn, attributes = await search_ldap_user(conn, username)
+        try:
+            # Create search filter for the user
+            search_filter = f"(&(objectClass=user)(sAMAccountName={username}))"
 
-        # Process the user attributes (still useful for logging/debugging)
+            # Use positional parameters for search
+            result = conn.search(
+                settings.ldap_search_base,
+                search_filter,
+                SUBTREE,
+                attributes=["memberOf", "mail", "displayName"]
+            )
+
+            if not result or not conn.entries:
+                print(f"User search failed: {conn.result}")
+                raise HTTPException(
+                    status_code=401,
+                    detail="User not found in Active Directory"
+                )
+
+            user_entry = conn.entries[0]
+            user_dn = user_entry.entry_dn
+            print(f"Found user DN: {user_dn}")
+
+            # Extract attributes
+            attributes = {}
+            for attr_name in user_entry.entry_attributes:
+                attributes[attr_name] = user_entry[attr_name].values
+
+        except Exception as e:
+            print(f"Error searching for user: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"LDAP search error: {str(e)}"
+            )
+
+        # Process user attributes
         name, email, role, sso_metadata = process_user_attributes(attributes, username)
+        print(f"User attributes processed. Name: {name}, Role: {role}")
 
-        # Get the user from database - will raise error if not found
-        user = await get_user_by_external_id(username, db_session)
-
-        return user
+        # Get user from database - will raise error if not found
+        try:
+            user = await get_user_by_external_id(username, db_session)
+            return user
+        except HTTPException:
+            raise  # Re-raise HTTP exceptions
+        except Exception as e:
+            print(f"Database error: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Database error: {str(e)}"
+            )
 
     except LDAPBindError:
         print("Invalid LDAP credentials")
         raise HTTPException(
             status_code=401,
-            detail="Invalid LDAP credentials",
+            detail="Invalid LDAP credentials"
         )
-    except LDAPException as e:
-        print(f"LDAP error: {str(e)}")
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
+    except Exception as e:
+        print(f"LDAP authentication error: {str(e)}")
         raise HTTPException(
-            status_code=401,
-            detail=f"LDAP authentication failed: {str(e)}",
+            status_code=500,
+            detail=f"LDAP authentication failed: {str(e)}"
         )
     finally:
-        conn.unbind()
+        try:
+            conn.unbind()
+            print("LDAP connection closed")
+        except:
+            pass  # Ignore unbind errors

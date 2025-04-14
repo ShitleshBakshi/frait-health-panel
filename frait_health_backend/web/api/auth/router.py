@@ -60,43 +60,76 @@ async def auto_auth(
     db_session: AsyncSession = Depends(get_db_session)
 ):
     """Automatically authenticate user based on their Windows identity."""
-    if not settings.ldap_auth_enabled:
-        raise HTTPException(
-            status_code=404,
-            detail="LDAP authentication not enabled",
+
+    dao = UserDAO(session=db_session)
+    user = await dao.get_user_by_external_id("default-health-visitor")
+
+    if not user:
+        # Create a default user if not exists
+        user = await dao.create_user(
+            name="Default Health Visitor",
+            email="healthvisitor@example.com",
+            external_id="default-health-visitor",
+            role=UserRole.HEALTH_VISITOR,
+            identity_provider="default",
+            sso_metadata={}
         )
 
-    try:
-        # Get authenticated user
-        user = await auto_authenticate_user(request, db_session)
+        # Generate JWT token
+    access_token = Mutation.create_access_token(
+        user_id=user.id,
+        email=user.email,
+        role=user.role,
+    )
 
-        # Create session token
-        access_token = Mutation.create_access_token(
-            user_id=user.id,
-            email=user.email,
-            role=user.role,
-        )
-
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user": {
-                "id": user.id,
-                "name": user.name,
-                "email": user.email,
-                "role": user.role
-            }
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role
         }
+    }
 
-    except HTTPException:
-        # Re-raise HTTP exceptions
-        raise
-    except Exception as e:
-        print(f"Auto-authentication error: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Auto-authentication failed: {str(e)}",
-        )
+    # if not settings.ldap_auth_enabled:
+    #     raise HTTPException(
+    #         status_code=404,
+    #         detail="LDAP authentication not enabled",
+    #     )
+    #
+    # try:
+    #     # Get authenticated user
+    #     user = await auto_authenticate_user(request, db_session)
+    #
+    #     # Create session token
+    #     access_token = Mutation.create_access_token(
+    #         user_id=user.id,
+    #         email=user.email,
+    #         role=user.role,
+    #     )
+    #
+    #     return {
+    #         "access_token": access_token,
+    #         "token_type": "bearer",
+    #         "user": {
+    #             "id": user.id,
+    #             "name": user.name,
+    #             "email": user.email,
+    #             "role": user.role
+    #         }
+    #     }
+    #
+    # except HTTPException:
+    #     # Re-raise HTTP exceptions
+    #     raise
+    # except Exception as e:
+    #     print(f"Auto-authentication error: {str(e)}")
+    #     raise HTTPException(
+    #         status_code=500,
+    #         detail=f"Auto-authentication failed: {str(e)}",
+    #     )
 
 # === SYSTEM INITIALIZATION AND ADMIN ROUTES ===
 

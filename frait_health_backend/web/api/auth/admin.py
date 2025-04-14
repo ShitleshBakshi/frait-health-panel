@@ -66,6 +66,33 @@ async def get_ad_user_details(username: str) -> dict:
     finally:
         conn.unbind()
 
+
+# Add a new function to create a default Health Visitor
+async def create_default_health_visitor(db_session: AsyncSession) -> UserModel:
+    """
+    Create a default Health Visitor user if none exists.
+    This is used for the authentication bypass system.
+    """
+    dao = UserDAO(session=db_session)
+
+    # Check if default HV already exists
+    existing_user = await dao.get_user_by_external_id("default-health-visitor")
+
+    if existing_user:
+        return existing_user
+
+    # Create new default Health Visitor user
+    default_user = await dao.create_user(
+        name="Default Health Visitor",
+        email="default-hv@fraithealth.com",
+        external_id="default-health-visitor",
+        role=UserRole.HEALTH_VISITOR,  # Force Health Visitor role
+        identity_provider="default",
+        sso_metadata={"default": True}
+    )
+
+    return default_user
+
 async def initialize_system_with_admin(
     admin_username: str,
     db_session: AsyncSession
@@ -78,27 +105,33 @@ async def initialize_system_with_admin(
     # Verify system is not already initialized
     is_initialized = await check_if_system_initialized(db_session)
     if is_initialized:
+        dao = UserDAO(session=db_session)
+        users = await dao.filter(role=UserRole.HEALTH_VISITOR)
+
+        if users:
+            return users[0]  # Return first Health Visitor found
         raise HTTPException(
             status_code=403,
             detail="System already initialized with users"
         )
 
     try:
-        # Get admin details from AD
-        admin_details = await get_ad_user_details(admin_username)
-
-        # Create admin user
-        dao = UserDAO(session=db_session)
-        admin_user = await dao.create_user(
-            name=admin_details["name"],
-            email=admin_details["email"] or f"{admin_username}@fraithealth.com",
-            external_id=admin_username,
-            role=UserRole.ADMIN,  # Force admin role
-            identity_provider="ldap3",
-            sso_metadata=admin_details["sso_metadata"]
-        )
-
-        return admin_user
+        return await create_default_health_visitor(db_session)
+        # # Get admin details from AD
+        # admin_details = await get_ad_user_details(admin_username)
+        #
+        # # Create admin user
+        # dao = UserDAO(session=db_session)
+        # admin_user = await dao.create_user(
+        #     name=admin_details["name"],
+        #     email=admin_details["email"] or f"{admin_username}@fraithealth.com",
+        #     external_id=admin_username,
+        #     role=UserRole.ADMIN,  # Force admin role
+        #     identity_provider="ldap3",
+        #     sso_metadata=admin_details["sso_metadata"]
+        # )
+        #
+        # return admin_user
 
     except Exception as e:
         raise HTTPException(
@@ -201,7 +234,8 @@ async def admin_get_users_from_ad(
             search_filter=search_filter,
             search_scope=SUBTREE,
             attributes=["sAMAccountName", "displayName", "mail", "memberOf"],
-            size_limit=limit
+            size_limit=limit,
+            controls=[]
         )
 
         # Process results

@@ -2,6 +2,7 @@ from importlib import metadata
 
 from fastapi import FastAPI
 from fastapi.responses import UJSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
 from frait_health_backend.log import configure_logging
@@ -50,7 +51,25 @@ def get_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    class DefaultAuthMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request, call_next):
+            # Generate a token for Health Visitor role
+            from frait_health_backend.web.gql.user.mutation import Mutation
+            token = Mutation.create_access_token(
+                user_id=1,
+                email="healthvisitor@example.com",
+                role="Health Visitor",
+            )
+
+            # Add token to request headers
+            request.scope["headers"].append(
+                (b"authorization", f"Bearer {token}".encode())
+            )
+
+            return await call_next(request)
+
     # Main router for the API.
+    app.add_middleware(DefaultAuthMiddleware)
     app.include_router(router=api_router, prefix="/api")
     app.include_router(router=router, prefix="/api/auth", tags=["auth"])
     # Graphql router
