@@ -1,7 +1,7 @@
 module.exports = {
     apps: [
         {
-            name: "next-app",
+            name: "frait-next-app",
             script: "node_modules/next/dist/bin/next",
             args: "start",
             instances: "max",

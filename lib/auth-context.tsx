@@ -15,10 +15,10 @@ import {autoLogin, getCurrentUser} from "@/lib/api"
 
 // Define the User Role type to exactly match the backend
 export enum UserRole {
-    ADMIN = "Admin",
-    MANAGER = "Manager",
+    // ADMIN = "Admin",
+    // MANAGER = "Manager",
     HEALTH_VISITOR = "Health Visitor",
-    ASSISTANT_HEALTH_VISITOR = "Assistant Health Visitor"
+    // ASSISTANT_HEALTH_VISITOR = "Assistant Health Visitor"
 }
 
 // User interface for auth context
@@ -58,84 +58,93 @@ export const useAuth = () => {
     return context
 }
 
+
+const defaultUser: User = {
+    id: "default-hv-1",
+    username: "Default Health Visitor",
+    role: UserRole.HEALTH_VISITOR,
+    healthBoard: "Powys Health Board"
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const dispatch = useDispatch()
     // Get user data from Redux store
+    const [user, setUser] = useState<User | null>(defaultUser);
     const reduxUser = useSelector((state: RootState) => state.user)
-    const [isLoading, setIsLoading] = useState(true)
+    const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    // Create user object if we have an ID
-    const user = reduxUser.id ? {
-        id: reduxUser.id,
-        username: reduxUser.username,
-        role: reduxUser.role as UserRole,
-        healthBoard: reduxUser.healthBoard
-    }: null;
+    // // Create user object if we have an ID
+    // const user = reduxUser.id ? {
+    //     id: reduxUser.id,
+    //     username: reduxUser.username,
+    //     role: reduxUser.role as UserRole,
+    //     healthBoard: reduxUser.healthBoard
+    // }: null;
 
 
-    // Auto login when the application starts
-    useEffect(() => {
-        const attemptLogin = async () => {
-            try {
-                setIsLoading(true)
-
-                // Try to get user from token first if available
-                const token = localStorage.getItem('auth_token')
-                if (token) {
-                    try {
-                        const userData = await getCurrentUser();
-
-
-                        if (userData?.me) {
-                            dispatch(setUser({
-                                id: userData.me.id.toString(),
-                                username: userData.me.name,
-                                role: userData.me.role,
-                                healthBoard: "Powys Health Board"
-                            }))
-                            setError(null)
-                            setIsLoading(false)
-                            return
-                        }
-                    } catch (error) {
-                        // Token might be invalid, continue with auto login
-                        console.error("Error verifying token:", error)
-                        localStorage.removeItem('auth_token')
-                    }
-                }
-
-                // If token not available or invalid, try auto login
-                const loginData = await autoLogin();
-
-                if (loginData?.autoLogin?.success) {
-                    const { token, user: userData } = loginData.autoLogin
-
-                    // Save token to localStorage
-                    localStorage.setItem('auth_token', token)
-
-                    // Update Redux store
-                    dispatch(setUser({
-                        id: userData.id.toString(),
-                        username: userData.name,
-                        role: userData.role,
-                        healthBoard: "Powys Health Board"
-                    }))
-
-                    setError(null)
-                } else {
-                    setError(loginData?.autoLogin?.message || "Authentication failed")
-                }
-            } catch (error) {
-                console.error("Auto login error:", error)
-                setError("Failed to authenticate. Please try again later.")
-            } finally {
-                setIsLoading(false)
-            }
-        }
-
-        attemptLogin()
-    }, [dispatch])
+    // // Auto login when the application starts
+    // useEffect(() => {
+    //     const attemptLogin = async () => {
+    //         try {
+    //             setIsLoading(true)
+    //
+    //             // Try to get user from token first if available
+    //             const token = localStorage.getItem('auth_token')
+    //             if (token) {
+    //                 try {
+    //                     const userData = await getCurrentUser();
+    //
+    //
+    //                     if (userData?.me) {
+    //                         dispatch(setUser({
+    //                             id: userData.me.id.toString(),
+    //                             username: userData.me.name,
+    //                             role: userData.me.role,
+    //                             healthBoard: "Powys Health Board"
+    //                         }))
+    //                         setError(null)
+    //                         setIsLoading(false)
+    //                         return
+    //                     }
+    //                 } catch (error) {
+    //                     // Token might be invalid, continue with auto login
+    //                     console.error("Error verifying token:", error)
+    //                     localStorage.removeItem('auth_token')
+    //                 }
+    //             }
+    //
+    //             // If token not available or invalid, try auto login
+    //             const loginData = await autoLogin();
+    //
+    //             if (loginData?.autoLogin?.success) {
+    //                 const { token, user: userData } = loginData.autoLogin
+    //
+    //                 // Save token to localStorage
+    //                 localStorage.setItem('auth_token', token)
+    //
+    //                 // Update Redux store
+    //                 dispatch(setUser({
+    //                     id: userData.id.toString(),
+    //                     username: userData.name,
+    //                     role: userData.role,
+    //                     healthBoard: "Powys Health Board"
+    //                 }))
+    //
+    //                 setError(null)
+    //             } else {
+    //                 setError(loginData?.autoLogin?.message || "Authentication failed")
+    //             }
+    //         } catch (error) {
+    //             console.error("Auto login error:", error)
+    //             setError("Failed to authenticate. Please try again later.")
+    //         } finally {
+    //             setIsLoading(false)
+    //         }
+    //     }
+    //
+    //     attemptLogin()
+    // }, [dispatch])
 
     const logout = () => {
         localStorage.removeItem('auth_token')
@@ -151,8 +160,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isAssignedFamily = (familyId: string) => {
         if (!user) return false
 
-        // Health Visitors and others can see all families
-        if (user.role !== UserRole.ASSISTANT_HEALTH_VISITOR) return true;
+        // // Health Visitors and others can see all families
+        // if (user.role !== UserRole.ASSISTANT_HEALTH_VISITOR) return true;
 
         // For Assistant Health Visitors, check if this family is assigned to them
         return !!reduxUser.assignedFamilies[user.id]?.includes(familyId);
@@ -162,20 +171,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const getAssignedFamilies = () => {
         if (!user) return [];
 
-        // Assistant Health Visitors only see their assigned families
-        if (user.role === UserRole.ASSISTANT_HEALTH_VISITOR) {
-            // Get only families assigned to the CURRENT Assistant Health Visitor
-            return reduxUser.assignedFamilies[user.id] || [];
-        }
+        // // Assistant Health Visitors only see their assigned families
+        // if (user.role === UserRole.ASSISTANT_HEALTH_VISITOR) {
+        //     // Get only families assigned to the CURRENT Assistant Health Visitor
+        //     return reduxUser.assignedFamilies[user.id] || [];
+        // }
 
-        // Health Visitors and managers see all assigned families across all assistants
-        if (user.role === UserRole.HEALTH_VISITOR || user.role === UserRole.MANAGER) {
-            const allAssignedFamilies: string[] = [];
-            Object.values(reduxUser.assignedFamilies).forEach(families => {
-                allAssignedFamilies.push(...families);
-            });
-            return [...new Set(allAssignedFamilies)]; // Remove duplicates
-        }
+        // // Health Visitors and managers see all assigned families across all assistants
+        // if (user.role === UserRole.HEALTH_VISITOR || user.role === UserRole.MANAGER) {
+        //     const allAssignedFamilies: string[] = [];
+        //     Object.values(reduxUser.assignedFamilies).forEach(families => {
+        //         allAssignedFamilies.push(...families);
+        //     });
+        //     return [...new Set(allAssignedFamilies)]; // Remove duplicates
+        // }
         return [];
     }
 

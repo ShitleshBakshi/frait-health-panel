@@ -7,7 +7,7 @@ import { useAuth, type UserRole } from "@/lib/auth-context"
 
 export function withAuth<P extends object>(
     WrappedComponent: React.ComponentType<P>,
-    allowedRoles: UserRole[]
+    allowedRoles: UserRole.HEALTH_VISITOR
 ) {
     return function AuthenticatedComponent(props: any) {
         const { user, isLoading } = useAuth()
@@ -23,10 +23,10 @@ export function withAuth<P extends object>(
                 return
             }
 
-            // If user has a role but it's not in the allowed roles, redirect to unauthorized
-            if (user.role && !allowedRoles.includes(user.role)) {
-                router.push("/unauthorized")
-            }
+            // // If user has a role but it's not in the allowed roles, redirect to unauthorized
+            // if (user.role && !allowedRoles.includes(user.role)) {
+            //     router.push("/unauthorized")
+            // }
         }, [user, router, isLoading])
 
         // Show nothing during loading state
@@ -37,13 +37,13 @@ export function withAuth<P extends object>(
         // Don't render anything during the authentication check
         // This prevents the flash of unauthorized content
         if (!user) {
-            return null
+            return
         }
 
-        // If user has a role but it's not allowed, don't render the component
-        if (user.role && !allowedRoles.includes(user.role)) {
-            return null
-        }
+        // // If user has a role but it's not allowed, don't render the component
+        // if (user.role && !allowedRoles.includes(user.role)) {
+        //     return null
+        // }
 
         // If we get here, user is authenticated and authorized
         return <WrappedComponent {...props} />
