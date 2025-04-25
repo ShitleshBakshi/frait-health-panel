@@ -19,8 +19,6 @@ gunicorn = "^23.0.0"
 pydantic = "2.4.2"
 pydantic-settings = "^2.1.0"
 yarl = "^1.18.3"
-ldap3 = "^2.9.1"
-python-ldap = "^3.4.4"
 ujson = "^5.10.0"
 SQLAlchemy = {version = "^2.0.36", extras = ["asyncio"]}
 alembic = "^1.14.0"
@@ -31,6 +29,7 @@ pymongo = "^4.10.1"
 strawberry-graphql = { version = "0.212.0", extras = ["fastapi"] }
 loguru = "^0.7.3"
 pyjwt = "^2.10.1"
+msal = "^1.28.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -177,3 +176,5 @@ jwt_auth = "None"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+

@@ -25,9 +25,12 @@ class UserModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(length=200))
     email: Mapped[str] = mapped_column(String(length=200), unique=True, index=True)
-    username: Mapped[str] = mapped_column(String(length=200), unique=True, nullable=True)
+    username: Mapped[Optional[str]] = mapped_column(String(length=200), unique=True, nullable=True)
     role: Mapped[UserRole] = mapped_column(String(length=200))
-    external_id: Mapped[Optional[str]] = mapped_column(String(length=200), unique=True, nullable=True)
-    identity_provider: Mapped[Optional[str]] = mapped_column(String(length=200), nullable=True)
-    sso_metadata: Mapped[Optional[dict]] = mapped_column(JSON(), nullable=True)
+    
+    # Azure AD specific fields
+    external_id: Mapped[Optional[str]] = mapped_column(String(length=200), nullable=True, index=True)
+    identity_provider: Mapped[Optional[str]] = mapped_column(String(length=50), nullable=True)
+    sso_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
 

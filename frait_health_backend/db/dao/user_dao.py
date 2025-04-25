@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 import bcrypt
 from fastapi import Depends
@@ -20,27 +20,31 @@ class UserDAO:
         self,
         name: str,
         email: str,
-        external_id: str,
         role: UserRole,
-        identity_provider: str,
-        sso_metadata: Optional[dict] = None,
+        external_id: Optional[str] = None,
+        identity_provider: Optional[str] = None,
+        username: Optional[str] = None,
+        sso_metadata: Optional[Dict[str, Any]] = None,
     ) -> UserModel:
         """
         Add single user to session.
 
         :param name: name of the user
         :param email: email of the user
-        :param password: password of the user (will be hashed)
         :param role: role of the user
+        :param external_id: external ID (e.g., Azure AD object ID)
+        :param identity_provider: identity provider (e.g., "azure_ad")
+        :param username: username of the user
+        :param sso_metadata: additional SSO metadata
         :return: created user model
         """
-        # hashed_password = self._hash_password(password)
         user = UserModel(
             name=name,
             email=email,
             role=role,
             external_id=external_id,
             identity_provider=identity_provider,
+            username=username,
             sso_metadata=sso_metadata,
         )
         self.session.add(user)
@@ -48,25 +52,7 @@ class UserDAO:
         return user
 
 
-    # Alias for create_user to maintain API compatibility
-    async def create_sso_user(
-        self,
-        external_id: str,
-        email: str,
-        name: str,
-        role: UserRole,
-        identity_provider: str,
-        sso_metadata: Optional[dict] = None,
-    ) -> UserModel:
-        """Create user via SSO authentication."""
-        return await self.create_user(
-            name=name,
-            email=email,
-            external_id=external_id,
-            role=role,
-            identity_provider=identity_provider,
-            sso_metadata=sso_metadata,
-        )
+
 
     async def get_all_users(self, limit: int, offset: int) -> List[UserModel]:
         """
@@ -101,11 +87,57 @@ class UserDAO:
     #
     #     return None
 
-    async def get_user_by_id(self, user_id: str) -> Optional[UserModel]:
-        """Get user by ID."""
+    async def get_user_by_id(self, user_id: int) -> Optional[UserModel]:
+        """
+        Get user by ID.
+        
+        :param user_id: ID of the user
+        :return: user model if found, None otherwise
+        """
         query = select(UserModel).where(UserModel.id == user_id)
         result = await self.session.execute(query)
         return result.scalars().first()
+        
+    async def get_user_by_external_id(self, external_id: str, identity_provider: Optional[str] = None) -> Optional[UserModel]:
+        """
+        Get user by external ID and optionally identity provider.
+        
+        :param external_id: external ID (e.g., Azure AD object ID)
+        :param identity_provider: identity provider (e.g., "azure_ad")
+        :return: user model if found, None otherwise
+        """
+        query = select(UserModel).where(UserModel.external_id == external_id)
+        if identity_provider:
+            query = query.where(UserModel.identity_provider == identity_provider)
+        result = await self.session.execute(query)
+        return result.scalars().first()
+        
+    async def get_user_by_email(self, email: str) -> Optional[UserModel]:
+        """
+        Get user by email.
+        
+        :param email: email of the user
+        :return: user model if found, None otherwise
+        """
+        query = select(UserModel).where(UserModel.email == email)
+        result = await self.session.execute(query)
+        return result.scalars().first()
+        
+    async def update_user_sso_metadata(self, user_id: int, sso_metadata: Dict[str, Any]) -> Optional[UserModel]:
+        """
+        Update user's SSO metadata.
+        
+        :param user_id: ID of the user
+        :param sso_metadata: SSO metadata to update
+        :return: updated user model if found, None otherwise
+        """
+        user = await self.get_user_by_id(user_id)
+        if not user:
+            return None
+            
+        user.sso_metadata = sso_metadata
+        await self.session.flush()
+        return user
 
     async def filter(
         self,
@@ -113,6 +145,9 @@ class UserDAO:
         email: Optional[str] = None,
         name: Optional[str] = None,
         role: Optional[UserRole] = None,
+        external_id: Optional[str] = None,
+        identity_provider: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> List[UserModel]:
         """
         Get specific user models.
@@ -121,6 +156,9 @@ class UserDAO:
         :param email: email of user instance
         :param name: name of user instance
         :param role: role of user instance
+        :param external_id: external ID of user instance
+        :param identity_provider: identity provider of user instance
+        :param limit: limit the number of results
         :return: user models
         """
         query = select(UserModel)
@@ -132,13 +170,17 @@ class UserDAO:
             query = query.where(UserModel.name == name)
         if role:
             query = query.where(UserModel.role == role)
+        if external_id:
+            query = query.where(UserModel.external_id == external_id)
+        if identity_provider:
+            query = query.where(UserModel.identity_provider == identity_provider)
+        if limit:
+            query = query.limit(limit)
         rows = await self.session.execute(query)
         return list(rows.scalars().fetchall())
 
-    async def get_user_by_external_id(self, external_id: str) -> Optional[UserModel]:
-        """Get user by external ID (Windows username)."""
-        query = select(UserModel).where(UserModel.external_id == external_id)
-        result = await self.session.execute(query)
-        return result.scalars().first()
+
+
+
 
 

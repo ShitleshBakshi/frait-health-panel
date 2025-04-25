@@ -1,7 +1,7 @@
 import enum
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Optional
+from typing import Optional, List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
@@ -36,54 +36,32 @@ class Settings(BaseSettings):
     reload: bool = False
 
     # CORS Settings
-    cors_allow_origins: list[str] = ["http://localhost:3000", "https://dev.efrait.com:9443"]
+    cors_allow_origins: list[str] = ["*"]
 
     # Current environment
     environment: str = "dev"
 
     log_level: LogLevel = LogLevel.INFO
 
-    # LDAP Authentication settings
-    ldap_auth_enabled: bool = False
-
-    # LDAP Settings
-    ldap_server_url: str = "ldap://34.229.200.54"
-    ldap_domain: str = "FRAITHEALTH"
-    ldap_search_base: str = "DC=fraithealth,DC=local"
-    ldap_groups_base: str = "CN=Users,DC=fraithealth,DC=local"
-    ldap_service_account: str = "service_user@fraithealth.local"  # or "FRAITHEALTH\\service_user"
-    ldap_service_password: str = "service_account_password"
-
-    # LDAP Role Mappings - maps UserRole to LDAP group names
-    ldap_role_groups: dict[str, str] = {
-        "Admin": "Admins",
-        "Manager": "Managers",
-        "Health Visitor": "HealthVisitors",
-        "Assistant Health Visitor": "AssistantHealthVisitors",
-    }
-
-    # Windows Authentication Settings
-    windows_auth_enabled: bool = False
-    windows_auth_provider: str = "windows_ad"
-
-
-    default_role: str = "Health Visitor"
-    bypass_authentication: bool = True
-
     # JWT settings
     jwt_secret_key: str = "your_secret_key_here"  # Change in production
     jwt_algorithm: str = "HS256"
     jwt_token_expire_minutes: int = 60 * 24  # 24 hours
-
-    @property
-    def get_ldap_group_dn(self, group_name: str) -> str:
-        """
-        Get the full Distinguished Name (DN) for a LDAP group.
-
-        :param group_name: Name of the group
-        :return: Full DN path for the group
-        """
-        return f"CN={group_name},{self.ldap_groups_base}"
+    
+    # Azure AD / MSAL settings
+    azure_tenant_id: str = ""  # Azure AD tenant ID
+    azure_client_id: str = ""  # Azure AD client ID (application ID)
+    azure_client_secret: str = ""  # Azure AD client secret
+    azure_redirect_uri: str = "http://localhost:8000/api/auth/msal/callback"  # Redirect URI after authentication
+    azure_authority: str = ""  # Will be constructed from tenant_id if not provided
+    azure_scopes: List[str] = ["User.Read"]  # Default scopes to request
+    azure_validate_authority: bool = True  # Whether to validate the authority
+    
+    # If true, automatically create users that don't exist in the database
+    auto_provision_users: bool = True
+    
+    # Default role for new users provisioned from Azure AD
+    default_user_role: str = "Health Visitor"
 
     # Variables for the database
     db_host: str = "localhost"
@@ -99,6 +77,17 @@ class Settings(BaseSettings):
     redis_user: Optional[str] = None
     redis_pass: Optional[str] = None
     redis_base: Optional[int] = None
+    
+    @property
+    def azure_authority_url(self) -> str:
+        """
+        Get the Azure AD authority URL.
+        
+        :return: Authority URL constructed from tenant ID if not explicitly provided
+        """
+        if self.azure_authority:
+            return self.azure_authority
+        return f"https://login.microsoftonline.com/{self.azure_tenant_id}"
 
     @property
     def db_url(self) -> URL:
@@ -143,3 +132,9 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+
+
+
+

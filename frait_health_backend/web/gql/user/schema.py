@@ -21,13 +21,3 @@ class UserModelDTO:
     identity_provider: Optional[str] = None
     sso_metadata: Optional[JSON] = None
 
-
-@strawberry.type
-class AuthResponse:
-    """Response for authentication."""
-
-    success: bool
-    message: str
-    token: Optional[str] = None
-    user: Optional[UserModelDTO] = None
-    token_type: str = "bearer"

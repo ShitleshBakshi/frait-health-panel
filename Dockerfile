@@ -2,8 +2,6 @@ FROM python:3.11.4-slim-bullseye AS prod
 RUN apt-get update && apt-get install -y \
   gcc \
   python3-dev \
-  libldap2-dev \
-  libsasl2-dev \
   libssl-dev \
   && rm -rf /var/lib/apt/lists/*
 
@@ -35,3 +33,4 @@ CMD ["/usr/local/bin/python", "-m", "frait_health_backend"]
 FROM prod AS dev
 
 RUN --mount=type=cache,target=/tmp/poetry_cache poetry install
+
