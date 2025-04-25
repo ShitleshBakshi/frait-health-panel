@@ -3,7 +3,7 @@
 import type React from "react"
 import {createContext, useContext, useEffect, useState} from "react"
 import {useDispatch, useSelector} from "react-redux"
-import {RootState} from "@/lib/store";
+import {RootState} from "@/lib/store"
 import {
     addPendingAssessment as addPendingAssessmentAction,
     assignFamilyToAssistant,
@@ -11,7 +11,8 @@ import {
     removeAssessment,
     setUser
 } from "@/lib/slices/userSlice"
-import {autoLogin, getCurrentUser} from "@/lib/api"
+import { useMsal } from "@azure/msal-react"
+import { loginRequest } from "@/lib/msal-config"
 
 // Define the User Role type to exactly match the backend
 export enum UserRole {
@@ -73,74 +74,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         healthBoard: reduxUser.healthBoard
     }: null;
 
+    // Get MSAL instance
+    const { instance, accounts } = useMsal();
 
     // Auto login when the application starts
     useEffect(() => {
         const attemptLogin = async () => {
             try {
-                setIsLoading(true)
+                setIsLoading(true);
 
-                // Try to get user from token first if available
-                const token = localStorage.getItem('auth_token')
-                if (token) {
+                // MSAL authentication flow
+                if (accounts.length > 0) {
+                    // Account exists, try to get token silently
                     try {
-                        const userData = await getCurrentUser();
+                        const response = await instance.acquireTokenSilent({
+                            ...loginRequest,
+                            account: accounts[0]
+                        });
 
-
-                        if (userData?.me) {
+                        if (response) {
+                            const account = response.account;
+                            // Map claims to user object
+                            const userRole = account.idTokenClaims?.roles?.[0] || UserRole.HEALTH_VISITOR;
+                            
                             dispatch(setUser({
-                                id: userData.me.id.toString(),
-                                username: userData.me.name,
-                                role: userData.me.role,
-                                healthBoard: "Powys Health Board"
-                            }))
-                            setError(null)
-                            setIsLoading(false)
-                            return
+                                id: account.localAccountId,
+                                username: account.name || '',
+                                // email: account.username,
+                                role: userRole as UserRole,
+                                healthBoard: "Powys Health Board" // This should come from claims
+                            }));
+                            setError(null);
+                            return;
                         }
                     } catch (error) {
-                        // Token might be invalid, continue with auto login
-                        console.error("Error verifying token:", error)
-                        localStorage.removeItem('auth_token')
+                        console.error("Error acquiring token:", error);
+                        // Token acquisition failed, redirect to login
+                        instance.loginRedirect(loginRequest);
                     }
-                }
-
-                // If token not available or invalid, try auto login
-                const loginData = await autoLogin();
-
-                if (loginData?.autoLogin?.success) {
-                    const { token, user: userData } = loginData.autoLogin
-
-                    // Save token to localStorage
-                    localStorage.setItem('auth_token', token)
-
-                    // Update Redux store
-                    dispatch(setUser({
-                        id: userData.id.toString(),
-                        username: userData.name,
-                        role: userData.role,
-                        healthBoard: "Powys Health Board"
-                    }))
-
-                    setError(null)
                 } else {
-                    setError(loginData?.autoLogin?.message || "Authentication failed")
+                    // No account found, redirect to login
+                    instance.loginRedirect(loginRequest);
                 }
             } catch (error) {
-                console.error("Auto login error:", error)
-                setError("Failed to authenticate. Please try again later.")
+                console.error("Authentication error:", error);
+                setError("Failed to authenticate. Please try again later.");
             } finally {
-                setIsLoading(false)
+                setIsLoading(false);
             }
-        }
+        };
 
-        attemptLogin()
-    }, [dispatch])
+        attemptLogin();
+    }, [dispatch, instance, accounts]);
 
-    const logout = () => {
-        localStorage.removeItem('auth_token')
-        // Clear Redux store only
-        dispatch(clearUser())
+    const logout = async () => {
+        // Clear Redux store
+        dispatch(clearUser());
+        
+        // Logout from MSAL
+        instance.logoutRedirect();
     }
 
     // Family assignment functions using Redux

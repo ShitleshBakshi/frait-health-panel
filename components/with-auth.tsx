@@ -4,6 +4,8 @@ import type React from "react"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth, type UserRole } from "@/lib/auth-context"
+import { useMsal } from "@azure/msal-react"
+import { loginRequest } from "@/lib/msal-config"
 
 export function withAuth<P extends object>(
     WrappedComponent: React.ComponentType<P>,
@@ -11,23 +13,43 @@ export function withAuth<P extends object>(
 ) {
     return function AuthenticatedComponent(props: any) {
         const { user, isLoading } = useAuth()
+        const { instance, accounts } = useMsal()
         const router = useRouter()
 
         useEffect(() => {
+            const checkAuth = async () => {
+                if (isLoading) return
 
-            if (isLoading) return
+                // MSAL authentication flow
+                if (accounts.length === 0) {
+                    try {
+                        await instance.loginRedirect(loginRequest)
+                        return
+                    } catch (error) {
+                        console.error("MSAL login failed:", error)
+                        router.push("/login")
+                        return
+                    }
+                }
 
-            // If there's no user, redirect to the role selection page
-            if (!user) {
-                router.push("/")
-                return
+                // If there's no user in our context, redirect to root for initialization
+                if (!user) {
+                    router.push("/")
+                    return
+                }
+
+                // If user has a role but it's not in the allowed roles, redirect to unauthorized
+                if (user.role && !allowedRoles.includes(user.role)) {
+                    // Pass the required role information to the unauthorized page
+                    const requiredRoleParam = allowedRoles.length === 1 
+                        ? `?requiredRole=${allowedRoles[0]}` 
+                        : ""
+                    router.push(`/unauthorized${requiredRoleParam}`)
+                }
             }
 
-            // If user has a role but it's not in the allowed roles, redirect to unauthorized
-            if (user.role && !allowedRoles.includes(user.role)) {
-                router.push("/unauthorized")
-            }
-        }, [user, router, isLoading])
+            checkAuth()
+        }, [user, router, isLoading, instance, accounts])
 
         // Show nothing during loading state
         if (isLoading) {
@@ -35,8 +57,7 @@ export function withAuth<P extends object>(
         }
 
         // Don't render anything during the authentication check
-        // This prevents the flash of unauthorized content
-        if (!user) {
+        if (!user || accounts.length === 0) {
             return null
         }
 
@@ -56,30 +77,48 @@ export function withAuth<P extends object>(
  * @param requiredRole A specific role required for access
  * @returns Object with isAuthorized flag to check in your component
  */
-export function useRoleAuth(requiredRole: UserRole ) {
+export function useRoleAuth(requiredRole: UserRole) {
     const { user, isLoading } = useAuth()
+    const { instance, accounts } = useMsal()
     const router = useRouter()
 
     useEffect(() => {
+        const checkAuth = async () => {
+            // Don't redirect during loading
+            if (isLoading) return
 
-        // Don't redirect during loading
-        if (isLoading) return
+            // MSAL authentication flow
+            if (accounts.length === 0) {
+                try {
+                    await instance.loginRedirect(loginRequest)
+                    return
+                } catch (error) {
+                    console.error("MSAL login failed:", error)
+                    router.push("/login")
+                    return
+                }
+            }
 
-        // If no user, redirect to login
-        if (!isLoading && !user) {
-            router.push("/")
-            return
+            // If no user in context, redirect to root
+            if (!isLoading && !user) {
+                router.push("/")
+                return
+            }
+
+            // If wrong role, redirect to unauthorized with role information
+            if (!isLoading && user && user.role !== requiredRole) {
+                router.push(`/unauthorized?requiredRole=${requiredRole}`)
+            }
         }
 
-        // If wrong role, redirect to unauthorized
-        if (!isLoading && user && user.role !== requiredRole) {
-            router.push("/unauthorized")
-        }
-    }, [user, router, requiredRole, isLoading])
+        checkAuth()
+    }, [user, router, requiredRole, isLoading, instance, accounts])
+
+    const isAuthenticated = accounts.length > 0;
 
     return {
-        isAuthorized: user && user.role === requiredRole,
-        isLoading
+        isAuthorized: user && user.role === requiredRole && isAuthenticated,
+        isLoading: isLoading
     }
 }
 
@@ -91,26 +130,52 @@ export function useRoleAuth(requiredRole: UserRole ) {
  */
 export function useMultiRoleAuth(allowedRoles: UserRole[]) {
     const { user, isLoading } = useAuth()
+    const { instance, accounts } = useMsal()
     const router = useRouter()
 
     useEffect(() => {
-        // Don't redirect during loading
-        if (isLoading) return
+        const checkAuth = async () => {
+            // Don't redirect during loading
+            if (isLoading) return
 
-        // If no user, redirect to login
-        if (!isLoading && !user) {
-            router.push("/")
-            return
+            // MSAL authentication flow
+            if (accounts.length === 0) {
+                try {
+                    await instance.loginRedirect(loginRequest)
+                    return
+                } catch (error) {
+                    console.error("MSAL login failed:", error)
+                    router.push("/login")
+                    return
+                }
+            }
+
+            // If no user in context, redirect to root
+            if (!isLoading && !user) {
+                router.push("/")
+                return
+            }
+
+            // If user has a role that's not in allowed roles, redirect with role information
+            if (!isLoading && user && user.role && !allowedRoles.includes(user.role)) {
+                // For multiple roles, we don't specify a single required role
+                const rolesParam = allowedRoles.length === 1 
+                    ? `?requiredRole=${allowedRoles[0]}` 
+                    : ""
+                router.push(`/unauthorized${rolesParam}`)
+            }
         }
 
-        // If user has a role that's not in allowed roles, redirect
-        if (!isLoading && user && user.role && !allowedRoles.includes(user.role)) {
-            router.push("/unauthorized")
-        }
-    }, [user, router, allowedRoles, isLoading])
+        checkAuth()
+    }, [user, router, allowedRoles, isLoading, instance, accounts])
+
+    const isAuthenticated = accounts.length > 0;
 
     return {
-        isAuthorized: user && user.role ? allowedRoles.includes(user.role) : false,
-        isLoading
+        isAuthorized: user && user.role ? allowedRoles.includes(user.role) && isAuthenticated : false,
+        isLoading: isLoading
     }
 }
+
+
+

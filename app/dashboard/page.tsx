@@ -21,7 +21,7 @@ function DashboardPage() {
 }
 
 // Use the UserRole enum for allowed roles
-export default withAuth(DashboardPage, [
+export default withAuth (DashboardPage, [
     UserRole.HEALTH_VISITOR,
     UserRole.ASSISTANT_HEALTH_VISITOR,
     UserRole.MANAGER,

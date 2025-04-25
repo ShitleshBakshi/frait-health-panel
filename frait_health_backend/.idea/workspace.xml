@@ -5,7 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5a0ba607-dee7-4fd8-a2ed-702ef27c5b39" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../components/oidc-auth-provider.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../lib/jwt-service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../app/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../app/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../app/login/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../app/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../app/unauthorized/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../app/unauthorized/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../components/sidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../components/sidebar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../components/with-auth.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../components/with-auth.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../lib/auth-context.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../lib/auth-context.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../lib/utils.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../lib/utils.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,28 +35,28 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Docker.docker-compose.override.yml: Compose Deployment.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenDatabaseViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;local-frontend&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/shitleshbakshi/FRAIT/WebstormProjects/frait-health-panel/frait_health_backend/frait_health_backend/web/gql/initial_family&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;aws.codewhisperer&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Docker.docker-compose.override.yml: Compose Deployment.executor": "Run",
+    "RunOnceActivity.OpenDatabaseViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "dev__frontend",
+    "last_opened_file_path": "/Users/shitleshbakshi/FRAIT/WebstormProjects/frait-health-panel/frait_health_backend/frait_health_backend/web/gql/initial_family",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "aws.codewhisperer",
+    "vue.rearranger.settings.migration": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;DatabaseDriversLRU&quot;: [
-      &quot;postgresql&quot;
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "postgresql"
     ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/frait_health_backend/web/gql/initial_family" />

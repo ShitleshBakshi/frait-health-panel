@@ -5,15 +5,18 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { AuthLoading } from "@/components/auth-loading"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { getLandingPageByRole } from "@/lib/utils"
 
 export default function RootPage() {
     const router = useRouter()
     const { user, isLoading, error } = useAuth()
 
-    // Redirect to dashboard if authenticated
+    // Redirect to role-specific landing page if authenticated
     useEffect(() => {
         if (!isLoading && user) {
-            router.push("/dashboard")
+            // Get the appropriate landing page based on user role
+            const landingPage = getLandingPageByRole(user.role)
+            router.push(landingPage)
         }
     }, [user, router, isLoading])
 
