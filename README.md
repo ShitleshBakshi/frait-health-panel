@@ -16,8 +16,8 @@ The application can be configured to use either MSAL or OIDC authentication by s
 2. Edit the `.env.local` file to configure your authentication settings:
 
    ```
-   # Authentication Type: 'msal' or 'oidc'
-   NEXT_PUBLIC_AUTH_TYPE=msal  # Change to 'oidc' to use OIDC authentication
+   # Authentication Type: 'msal' 
+   NEXT_PUBLIC_AUTH_TYPE=msal 
    
    # Microsoft Authentication (MSAL) Settings
    NEXT_PUBLIC_AZURE_CLIENT_ID=your-azure-client-id
@@ -25,11 +25,7 @@ The application can be configured to use either MSAL or OIDC authentication by s
    NEXT_PUBLIC_REDIRECT_URI=http://localhost:3000
    NEXT_PUBLIC_POST_LOGOUT_REDIRECT_URI=http://localhost:3000
    
-   # OIDC Authentication Settings
-   NEXT_PUBLIC_OIDC_AUTHORITY=http://localhost:8080/realms/test-sso
-   NEXT_PUBLIC_OIDC_CLIENT_ID=your-app
-   NEXT_PUBLIC_OIDC_REDIRECT_URI=http://localhost:3000/callback
-   NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI=http://localhost:3000
+   
    ```
 
 ### Microsoft Authentication (MSAL)
@@ -40,13 +36,7 @@ To use Microsoft Authentication:
 2. Configure your Azure AD application in the Azure portal
 3. Update the MSAL settings in `.env.local` with your Azure AD application details
 
-### OpenID Connect (OIDC) Authentication
 
-To use OIDC Authentication:
-
-1. Set `NEXT_PUBLIC_AUTH_TYPE=oidc` in your `.env.local` file
-2. Configure your OIDC provider (e.g., Keycloak)
-3. Update the OIDC settings in `.env.local` with your OIDC provider details
 
 ## Running the Application
 
