@@ -1,0 +1,19 @@
+    python ="3.9.1,<4"
+    bcrypt = "^4.0.1"
+    fastapi = "^0.115.6"
+    uvicorn = { version = "^0.34.0", extras = ["standard"] }
+    gunicorn = "^23.0.0"
+    pydantic = "2.4.2"
+    pydantic-settings = "^2.1.0"
+    yarl = "^1.18.3"
+    ujson = "^5.10.0"
+    SQLAlchemy = {version = "^2.0.36", extras = ["asyncio"]}
+    alembic = "^1.14.0"
+    asyncpg = {version = "^0.30.0", extras = ["sa"]}
+    redis = {version = "^5.2.1", extras = ["hiredis"]}
+    httptools = "^0.6.4"
+    pymongo = "^4.10.1"
+    strawberry-graphql = { version = "0.212.0", extras = ["fastapi"] }
+    loguru = "^0.7.3"
+    pyjwt = "^2.10.1"
+    msal = "^1.28.0"
