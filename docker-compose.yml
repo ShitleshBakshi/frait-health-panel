@@ -1,0 +1,93 @@
+services:
+  api: &main_app
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: frait_health_backend:${FRAIT_HEALTH_BACKEND_VERSION:-latest}
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app/src
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      FRAIT_HEALTH_BACKEND_HOST: 0.0.0.0
+      FRAIT_HEALTH_BACKEND_DB_HOST: frait_health_backend-db
+      FRAIT_HEALTH_BACKEND_DB_PORT: 5432
+      FRAIT_HEALTH_BACKEND_DB_USER: frait_health_backend
+      FRAIT_HEALTH_BACKEND_DB_PASS: frait_health_backend
+      FRAIT_HEALTH_BACKEND_DB_BASE: frait_health_backend
+      FRAIT_HEALTH_BACKEND_REDIS_HOST: frait_health_backend-redis
+
+  db:
+    image: postgres:16.3-bullseye
+    hostname: frait_health_backend-db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U frait_health_backend"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: frait_health_backend
+      POSTGRES_PASSWORD: frait_health_backend
+      POSTGRES_DB: frait_health_backend
+
+    ports:
+      - "5432:5432"
+    volumes:
+      - frait_health_backend-db-data:/var/lib/postgresql/data
+    restart: always
+  #    healthcheck:
+  #      test: pg_isready -U frait_health_backend
+  #      interval: 2s
+  #      timeout: 3s
+  #      retries: 40
+
+  migrator:
+    image: frait_health_backend:${FRAIT_HEALTH_BACKEND_VERSION:-latest}
+    restart: "no"
+    command: alembic upgrade head
+    volumes:
+      - .:/app/src
+    environment:
+      PYTHONPATH: /app/src
+      FRAIT_HEALTH_BACKEND_HOST: 0.0.0.0
+      FRAIT_HEALTH_BACKEND_DB_HOST: frait_health_backend
+      FRAIT_HEALTH_BACKEND_DB_PORT: 5432
+      FRAIT_HEALTH_BACKEND_DB_USER: frait_health_backend
+      FRAIT_HEALTH_BACKEND_DB_PASS: frait_health_backend
+      FRAIT_HEALTH_BACKEND_DB_BASE: frait_health_backend
+    healthcheck:
+      test: pg_isready -h frait_health_backend-db -U frait_health_backend
+      interval: 1s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: bitnami/redis:6.2.5
+    hostname: "frait_health_backend-redis"
+    restart: always
+    environment:
+      ALLOW_EMPTY_PASSWORD: "yes"
+    healthcheck:
+      test: redis-cli ping
+      interval: 1s
+      timeout: 3s
+      retries: 50
+
+
+
+volumes:
+  frait_health_backend-db-data:
+    name: frait_health_backend-db-data
