@@ -11,7 +11,9 @@
       "Bash(git check-ignore:*)",
       "Bash(git config:*)",
       "Bash(git filter-branch:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch node_modules/@next/swc-darwin-arm64/next-swc.darwin-arm64.node' --prune-empty --tag-name-filter cat -- --all)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
