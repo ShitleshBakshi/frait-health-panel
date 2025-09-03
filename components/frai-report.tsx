@@ -6,10 +6,11 @@ import { useParams, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import {
-    calculateCategoryScores,
+    calculateCategoryScoresFromAssessment,
     calculateOverallScore,
     shouldHighlightCell, type CategoryScores
 } from "@/lib/assessment-utils";
+import { printCombinedReports } from "@/lib/combined-print-utils";
 
 
 // Print styles for the FRAI report
@@ -146,17 +147,11 @@ export default function FRAIReport() {
 
     useEffect(() => {
         if (assessmentData) {
-            // Calculate scores based on the current assessment data
-            const scores = calculateCategoryScores({
-                assessment: {
-                    currentAssessment: {
-                        mainParentAssessment: assessmentData.mainParentAssessment,
-                        externalInfluenceAssessment: assessmentData.externalInfluenceAssessment,
-                        familyId: null,
-                        assessmentId: null
-                    }
-                }
-            } as RootState);
+            // Calculate scores using the correct function for stored assessment data
+            const scores = calculateCategoryScoresFromAssessment(
+                assessmentData.mainParentAssessment || [],
+                assessmentData.externalInfluenceAssessment || []
+            );
 
             setScores(scores);
             setOverallScore(calculateOverallScore(scores));
@@ -181,12 +176,21 @@ export default function FRAIReport() {
             <style dangerouslySetInnerHTML={{ __html: printStyles }} />
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold">Family Resilience Assessment Instrument</h1>
-                <Button
-                    onClick={() => router.push(`/families/${familyId}`)}
-                    className="bg-blue-600 hover:bg-blue-700"
-                >
-                    Back to Family
-                </Button>
+                <div className="flex gap-2 no-print">
+                    <Button
+                        onClick={() => printCombinedReports(familyId, assessmentId)}
+                        // onClick={() => window.print()}
+                        className="bg-blue-600 hover:bg-blue-700"
+                    >
+                        Print Combined Report
+                    </Button>
+                    <Button
+                        onClick={() => router.push(`/families/${familyId}`)}
+                        className="bg-gray-500 hover:bg-gray-600"
+                    >
+                        Back
+                    </Button>
+                </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
@@ -253,13 +257,6 @@ export default function FRAIReport() {
                         <tr key={5 - rowIndex}>
                             <td className="border p-2 font-bold text-center bg-gray-50 w-16">{5 - rowIndex}</td>
                             {rowTexts.map((text, colIndex) => {
-                                const categories = [
-                                    "responsive-parenting",
-                                    "family-health",
-                                    "engagement",
-                                    "family-support",
-                                    "socio-economic",
-                                ];
                                 const isHighlighted = shouldHighlightCell(rowIndex, colIndex, scores);
 
                                 return (
@@ -304,20 +301,6 @@ export default function FRAIReport() {
                 ))}
             </div>
 
-            <div className="flex justify-between mt-6">
-                <Button
-                    onClick={() => window.print()}
-                    className="bg-blue-600 hover:bg-blue-700"
-                >
-                    Print Report
-                </Button>
-                <Button
-                    onClick={() => router.push(`/families/${familyId}`)}
-                    className="bg-gray-600 hover:bg-gray-700"
-                >
-                    Back to Family
-                </Button>
-            </div>
         </div>
     );
 }

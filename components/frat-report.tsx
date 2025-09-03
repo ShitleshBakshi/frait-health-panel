@@ -7,7 +7,7 @@ import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 import { RootState } from "@/lib/store";
 import { FamilyAssessment, AssessmentLevel } from "@/type/assessment";
-import { calculateCategoryScores, calculateOverallScore } from "@/lib/assessment-utils";
+import { printCombinedReports } from "@/lib/combined-print-utils";
 
 // Print styles for the FRAT report
 const printStyles = `
@@ -289,10 +289,11 @@ export default function FRATReport({ assessmentId, familyId }: FRATReportProps) 
                                 <h1 className="text-2xl font-bold">Family Resilience Assessment Tool</h1>
                                 <div className="flex gap-2 no-print">
                                     <Button
-                                        onClick={() => window.print()}
+                                        onClick={() => printCombinedReports(familyId.toString(), assessmentId)}
+                                        // onClick={() => window.print()}
                                         className="bg-blue-600 hover:bg-blue-700"
                                     >
-                                        Print Report
+                                        Print Combined Report
                                     </Button>
                                     <Button
                                         onClick={() => router.back()}

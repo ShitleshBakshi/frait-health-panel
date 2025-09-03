@@ -104,6 +104,208 @@ export const fetchFamilies = createAsyncThunk(
     }
 );
 
+export const loadFamilyAssessments = createAsyncThunk(
+    'family/loadAssessments',
+    async (familyId: number, { rejectWithValue }) => {
+        try {
+            // Use separate queries for FRAT and FRAI assessments as per backend structure
+            const fratQuery = `
+                query GetFratAssessments($familyId: Int!) {
+                    getFratAssessmentsByFamily(familyId: $familyId) {
+                        id
+                        assessmentid
+                        assessment_1
+                        assessment_2
+                        assessment_3
+                        assessment_4
+                        assessment_5
+                        assessment_6
+                        assessment_7
+                        assessment_8
+                        assessment_9
+                        assessment_10
+                        assessment_11
+                        assessment_12
+                        assessment_13
+                        assessment_14
+                        assessment_15
+                        assessment_16
+                        assessment_17
+                        assessment_18
+                        assessment_19
+                        assessment_20
+                        assessment_21
+                        assessment_22
+                        assessment_23
+                        assessment_24
+                        assessment_25
+                        assessment_26
+                        assessment_27
+                        assessment_28
+                        assessment_29
+                        assessment_30
+                        assessment_31
+                        assessment_32
+                        assessment_33
+                        assessment_34
+                        assessment_35
+                        assessment_36
+                    }
+                }
+            `;
+
+            const fraiQuery = `
+                query GetFraiAssessments($familyId: Int!) {
+                    getFraiAssessmentsByFamily(familyId: $familyId) {
+                        id
+                        assessmentid
+                        responsive_parenting
+                        family_health
+                        family_engagement
+                        family_support
+                        socio_economic
+                        overall_score
+                    }
+                }
+            `;
+
+            const familyDetailsQuery = `
+                query GetFamilyDetails($familyId: Int!) {
+                    getFamilyDetails(familyId: $familyId) {
+                        id
+                        main_parent_first_name
+                        main_parent_last_name
+                        main_parent_dob
+                        main_parent_gender
+                        main_parent_relation_to_child
+                        main_parent_education_level
+                        main_parent_parental_responsibility
+                        main_parent_information_provider
+                        supporting_parents {
+                            id
+                            first_name
+                            last_name
+                            dob
+                            gender
+                            relation_to_child
+                            education_level
+                            parental_responsibility
+                            information_provider
+                        }
+                        children {
+                            id
+                            first_name
+                            last_name
+                            dob
+                            gender
+                            support_parent
+                            support_parent_first_name
+                            support_parent_last_name
+                        }
+                    }
+                }
+            `;
+
+            // Execute all queries in parallel
+            const [fratResult, fraiResult, familyDetailsResult] = await Promise.all([
+                fetchGraphQL(fratQuery, { familyId }).catch(() => ({ getFratAssessmentsByFamily: [] })),
+                fetchGraphQL(fraiQuery, { familyId }).catch(() => ({ getFraiAssessmentsByFamily: [] })),
+                fetchGraphQL(familyDetailsQuery, { familyId }).catch(() => ({ getFamilyDetails: null }))
+            ]);
+
+            // Transform backend data to frontend format
+            const fratAssessments = fratResult.getFratAssessmentsByFamily || [];
+            const fraiAssessments = fraiResult.getFraiAssessmentsByFamily || [];
+            const familyDetails = familyDetailsResult.getFamilyDetails;
+
+            // Create assessments map by assessmentid
+            const assessmentMap = new Map();
+
+            // Process FRAT assessments
+            fratAssessments.forEach((frat: any) => {
+                const assessmentKey = `${familyId}_${frat.assessmentid}`;
+                if (!assessmentMap.has(assessmentKey)) {
+                    assessmentMap.set(assessmentKey, {
+                        id: assessmentKey,
+                        familyId: familyId,
+                        status: "DONE", // Backend doesn't track status, assume completed
+                        assessorHv: "System", // Backend doesn't track assessor
+                        reviewerHv: "Pending",
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                        mainParent: familyDetails ? {
+                            firstName: familyDetails.main_parent_first_name,
+                            lastName: familyDetails.main_parent_last_name,
+                            dateOfBirth: familyDetails.main_parent_dob
+                        } : null,
+                        supportingParents: familyDetails?.supporting_parents || [],
+                        children: familyDetails?.children || [],
+                        mainParentAssessment: [],
+                        supportingParentAssessment: [],
+                        childAssessment: [],
+                        externalInfluenceAssessment: []
+                    });
+                }
+
+                // Map FRAT fields to assessment structure (simplified)
+                const assessment = assessmentMap.get(assessmentKey);
+                // This is a simplified mapping - you may need to adjust based on your frontend needs
+                for (let i = 1; i <= 36; i++) {
+                    const fieldName = `assessment_${i}`;
+                    if (frat[fieldName]) {
+                        assessment.mainParentAssessment.push({
+                            id: i,
+                            level: frat[fieldName]
+                        });
+                    }
+                }
+            });
+
+            // Process FRAI assessments (these contain the calculated scores)
+            fraiAssessments.forEach((frai: any) => {
+                const assessmentKey = `${familyId}_${frai.assessmentid}`;
+                if (!assessmentMap.has(assessmentKey)) {
+                    assessmentMap.set(assessmentKey, {
+                        id: assessmentKey,
+                        familyId: familyId,
+                        status: "DONE",
+                        assessorHv: "System",
+                        reviewerHv: "Pending",
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                        mainParent: familyDetails ? {
+                            firstName: familyDetails.main_parent_first_name,
+                            lastName: familyDetails.main_parent_last_name,
+                            dateOfBirth: familyDetails.main_parent_dob
+                        } : null,
+                        supportingParents: familyDetails?.supporting_parents || [],
+                        children: familyDetails?.children || [],
+                        mainParentAssessment: [],
+                        supportingParentAssessment: [],
+                        childAssessment: [],
+                        externalInfluenceAssessment: []
+                    });
+                }
+
+                // Add FRAI scores to the assessment
+                const assessment = assessmentMap.get(assessmentKey);
+                assessment.fraiScores = {
+                    responsiveParenting: frai.responsive_parenting,
+                    familyHealth: frai.family_health,
+                    familyEngagement: frai.family_engagement,
+                    familySupport: frai.family_support,
+                    socioEconomic: frai.socio_economic,
+                    overallScore: frai.overall_score
+                };
+            });
+
+            return Array.from(assessmentMap.values());
+        } catch (error) {
+            return rejectWithValue('Failed to load family assessments');
+        }
+    }
+);
+
 
 // Async thunks for adding a new family
 export const addFamily = createAsyncThunk(
@@ -140,7 +342,7 @@ export const addFamily = createAsyncThunk(
                 updatedAt: familyInput.updatedAt,
             };
         } catch (error) {
-            
+
 
             return rejectWithValue(error instanceof Error ? error.message : 'Failed to add family');
         }
@@ -310,6 +512,27 @@ const familySlice = createSlice({
                 state.loading = false;
             })
             .addCase(addFamiliesBulk.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+
+            // Load family assessments
+            .addCase(loadFamilyAssessments.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(loadFamilyAssessments.fulfilled, (state, action) => {
+                // Merge new assessments with existing ones, avoiding duplicates
+                const newAssessments = action.payload;
+                newAssessments.forEach((assessment: FamilyAssessment) => {
+                    const exists = state.assessments.find(a => a.id === assessment.id);
+                    if (!exists) {
+                        state.assessments.push(assessment);
+                    }
+                });
+                state.loading = false;
+            })
+            .addCase(loadFamilyAssessments.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             });

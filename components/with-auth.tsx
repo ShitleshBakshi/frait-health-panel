@@ -13,12 +13,34 @@ export function withAuth<P extends object>(
 ) {
     return function AuthenticatedComponent(props: any) {
         const { user, isLoading } = useAuth()
-        const { instance, accounts } = useMsal()
         const router = useRouter()
+
+        // Check if authentication is enabled
+        const isAuthEnabled = process.env.NEXT_PUBLIC_ENABLE_AUTHENTICATION === 'true';
+
+        // Only use MSAL hooks if authentication is enabled
+        let instance: any = null;
+        let accounts: any[] = [];
+        
+        if (isAuthEnabled) {
+            try {
+                const msalData = useMsal();
+                instance = msalData.instance;
+                accounts = msalData.accounts;
+            } catch (error) {
+                // MSAL hooks not available, which is expected when auth is disabled
+                console.debug('MSAL hooks not available, authentication is disabled');
+            }
+        }
 
         useEffect(() => {
             const checkAuth = async () => {
                 if (isLoading) return
+
+                // If authentication is disabled, skip all checks
+                if (!isAuthEnabled) {
+                    return;
+                }
 
                 // MSAL authentication flow
                 if (accounts.length === 0) {
@@ -49,7 +71,12 @@ export function withAuth<P extends object>(
             }
 
             checkAuth()
-        }, [user, router, isLoading, instance, accounts])
+        }, [user, router, isLoading, instance, accounts, isAuthEnabled])
+
+        // If authentication is disabled, render component directly
+        if (!isAuthEnabled) {
+            return <WrappedComponent {...props} />
+        }
 
         // Show nothing during loading state
         if (isLoading) {
@@ -79,13 +106,35 @@ export function withAuth<P extends object>(
  */
 export function useRoleAuth(requiredRole: UserRole) {
     const { user, isLoading } = useAuth()
-    const { instance, accounts } = useMsal()
     const router = useRouter()
+
+    // Check if authentication is enabled
+    const isAuthEnabled = process.env.NEXT_PUBLIC_ENABLE_AUTHENTICATION === 'true';
+
+    // Only use MSAL hooks if authentication is enabled
+    let instance: any = null;
+    let accounts: any[] = [];
+    
+    if (isAuthEnabled) {
+        try {
+            const msalData = useMsal();
+            instance = msalData.instance;
+            accounts = msalData.accounts;
+        } catch (error) {
+            // MSAL hooks not available, which is expected when auth is disabled
+            console.debug('MSAL hooks not available, authentication is disabled');
+        }
+    }
 
     useEffect(() => {
         const checkAuth = async () => {
             // Don't redirect during loading
             if (isLoading) return
+
+            // If authentication is disabled, skip all checks
+            if (!isAuthEnabled) {
+                return;
+            }
 
             // MSAL authentication flow
             if (accounts.length === 0) {
@@ -112,12 +161,12 @@ export function useRoleAuth(requiredRole: UserRole) {
         }
 
         checkAuth()
-    }, [user, router, requiredRole, isLoading, instance, accounts])
+    }, [user, router, requiredRole, isLoading, instance, accounts, isAuthEnabled])
 
-    const isAuthenticated = accounts.length > 0;
+    const isAuthenticated = isAuthEnabled ? accounts.length > 0 : true;
 
     return {
-        isAuthorized: user && user.role === requiredRole && isAuthenticated,
+        isAuthorized: isAuthEnabled ? (user && user.role === requiredRole && isAuthenticated) : true,
         isLoading: isLoading
     }
 }
@@ -130,13 +179,35 @@ export function useRoleAuth(requiredRole: UserRole) {
  */
 export function useMultiRoleAuth(allowedRoles: UserRole[]) {
     const { user, isLoading } = useAuth()
-    const { instance, accounts } = useMsal()
     const router = useRouter()
+
+    // Check if authentication is enabled
+    const isAuthEnabled = process.env.NEXT_PUBLIC_ENABLE_AUTHENTICATION === 'true';
+
+    // Only use MSAL hooks if authentication is enabled
+    let instance: any = null;
+    let accounts: any[] = [];
+    
+    if (isAuthEnabled) {
+        try {
+            const msalData = useMsal();
+            instance = msalData.instance;
+            accounts = msalData.accounts;
+        } catch (error) {
+            // MSAL hooks not available, which is expected when auth is disabled
+            console.debug('MSAL hooks not available, authentication is disabled');
+        }
+    }
 
     useEffect(() => {
         const checkAuth = async () => {
             // Don't redirect during loading
             if (isLoading) return
+
+            // If authentication is disabled, skip all checks
+            if (!isAuthEnabled) {
+                return;
+            }
 
             // MSAL authentication flow
             if (accounts.length === 0) {
@@ -167,12 +238,12 @@ export function useMultiRoleAuth(allowedRoles: UserRole[]) {
         }
 
         checkAuth()
-    }, [user, router, allowedRoles, isLoading, instance, accounts])
+    }, [user, router, allowedRoles, isLoading, instance, accounts, isAuthEnabled])
 
-    const isAuthenticated = accounts.length > 0;
+    const isAuthenticated = isAuthEnabled ? accounts.length > 0 : true;
 
     return {
-        isAuthorized: user && user.role ? allowedRoles.includes(user.role) && isAuthenticated : false,
+        isAuthorized: isAuthEnabled ? (user && user.role ? allowedRoles.includes(user.role) && isAuthenticated : false) : true,
         isLoading: isLoading
     }
 }

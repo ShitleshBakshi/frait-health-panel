@@ -1,12 +1,12 @@
 "use client"
 
-import {useEffect, useState} from "react"
+import {useEffect, useState, useCallback} from "react"
 import { Input } from "./ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
 import { Button } from "./ui/button"
 import {ChevronLeft, ChevronRight, MoreHorizontal, Plus, Clock, Eye, Copy, FileText, UserPlus} from "lucide-react"
 import Link from "next/link"
-import { setCurrentFamily, addFamily, addFamiliesBulk, fetchFamilies, type Family } from "@/lib/slices/familySlice"
+import { setCurrentFamily, addFamily, addFamiliesBulk, fetchFamilies, loadFamilyAssessments, type Family } from "@/lib/slices/familySlice"
 import {useDispatch, useSelector} from "react-redux";
 import {RootState, AppDispatch} from "@/lib/store";
 import type { FamilyAssessment } from "@/type/assessment"
@@ -36,6 +36,7 @@ export function FamiliesContent({
     const [assignFamilyModalOpen, setAssignFamilyModalOpen] = useState(false)
     const [approvalModalOpen, setApprovalModalOpen] = useState(false)
     const [selectedAssessment, setSelectedAssessment] = useState<any>(null)
+    const [assessmentsLoaded, setAssessmentsLoaded] = useState(false)
 
     // Get families & assessments from Redux store
     const families = useSelector((state: RootState) => state.family.families)
@@ -62,9 +63,6 @@ export function FamiliesContent({
 
         return true;
     });
-    useEffect(() => {
-        
-    }, [user?.role]);
 
     const handleFamilySelect = (family: Family) => {
         setSelectedFamily(family)
@@ -85,10 +83,34 @@ export function FamiliesContent({
     //     }
     // }
 
+    const fetchAllAssessments = useCallback(async () => {
+        try {
+            // Fetch assessments for each family and populate Redux store
+            for (const family of families) {
+                await dispatch(loadFamilyAssessments(family.id))
+            }
+        } catch (error) {
+            toast({
+                title: "Warning",
+                description: "Some assessment data could not be loaded",
+                variant: "destructive"
+            })
+        }
+    }, [families, dispatch, toast])
+
     // Initial load of family data
     useEffect(() => {
         dispatch(fetchFamilies())
     }, [dispatch])
+
+    // Fetch assessments after families are loaded
+    useEffect(() => {
+        if (families.length > 0 && !assessmentsLoaded) {
+            fetchAllAssessments().finally(() => {
+                setAssessmentsLoaded(true)
+            })
+        }
+    }, [families, assessmentsLoaded, fetchAllAssessments])
 
     // Listen for family assignment updates (especially for Assistant Health Visitors)
     useEffect(() => {
@@ -147,7 +169,6 @@ export function FamiliesContent({
             })
         }
     }
-
 
     // Handle refresh button click
     const handleRefresh = () => {

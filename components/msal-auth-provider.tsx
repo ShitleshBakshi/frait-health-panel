@@ -9,8 +9,15 @@ import { setUser, clearUser } from '@/lib/slices/userSlice';
 import { UserRole } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 
-// Initialize MSAL instance
-const msalInstance = new PublicClientApplication(msalConfig);
+// Check if authentication is enabled
+const isAuthEnabled = process.env.NEXT_PUBLIC_ENABLE_AUTHENTICATION === 'true';
+
+// Initialize MSAL instance only if authentication is enabled
+let msalInstance: PublicClientApplication | null = null;
+
+if (isAuthEnabled && typeof window !== 'undefined') {
+    msalInstance = new PublicClientApplication(msalConfig);
+}
 
 // Helper function to map Azure AD groups/roles to application roles
 const mapAzureADToUserRole = (account: any): UserRole | null => {
@@ -59,6 +66,11 @@ const AuthenticationWrapper = ({ children }: { children: ReactNode }) => {
     const router = useRouter();
 
     useEffect(() => {
+        // Only run MSAL logic if authentication is enabled and instance exists
+        if (!isAuthEnabled || !msalInstance) {
+            return;
+        }
+
         // Handle redirect after login
         msalInstance.handleRedirectPromise().catch(error => {
             console.error(error);
@@ -114,6 +126,11 @@ const AuthenticationWrapper = ({ children }: { children: ReactNode }) => {
 
 // Main MSAL Provider component
 export const MSALAuthProvider = ({ children }: { children: ReactNode }) => {
+    // If authentication is disabled or MSAL instance is not available, just return children
+    if (!isAuthEnabled || !msalInstance) {
+        return <>{children}</>;
+    }
+
     return (
         <MsalProvider instance={msalInstance}>
             <AuthenticationWrapper>

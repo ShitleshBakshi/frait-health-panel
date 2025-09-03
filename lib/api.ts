@@ -21,12 +21,17 @@ export async function fetchGraphQL(
 ) {
 
     try {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-        if (token) {
-            headers = {
-                ...headers,
-                'Authorization': `Bearer ${token}`
-            };
+        // Only add authorization header if authentication is enabled
+        const isAuthEnabled = process.env.NEXT_PUBLIC_ENABLE_AUTHENTICATION === 'true';
+        
+        if (isAuthEnabled) {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+            if (token) {
+                headers = {
+                    ...headers,
+                    'Authorization': `Bearer ${token}`
+                };
+            }
         }
 
         const response = await fetch(GRAPHQL_URL, {
@@ -276,12 +281,12 @@ export async function fetchSpecificFraiAssessment(familyId: number, assessmentId
       getSpecificFraiAssessment(family_id: $familyId, assessment_id: $assessmentId) {
         id
         assessmentid
-        responsive_parenting
-        family_health
-        family_engagement
-        family_support
-        socio_economic
-        overall_score
+        responsiveparenting
+        familyhealth
+        familyengagement
+        familysupport
+        socioeconomic
+        overallscore
       }
     }
   `;

@@ -28,7 +28,7 @@ interface PersistConfig {
 const persistConfig: PersistConfig = {
     key: 'root',
     storage,
-    whitelist: ['user', 'family', 'familyDetails'],
+    whitelist: ['user', 'family', 'familyDetails', 'assessment'],
 };
 
 // Combine reducers

@@ -78,6 +78,42 @@ export function calculateCategoryScores(state: RootState): CategoryScores {
     return scores;
 }
 
+// New function specifically for calculating scores from stored assessment data
+export function calculateCategoryScoresFromAssessment(
+    mainParentAssessment: AssessmentItem[], 
+    externalInfluenceAssessment: AssessmentItem[]
+): CategoryScores {
+    const scores: CategoryScores = {
+        "responsive-parenting": 0,
+        "family-health": 0,
+        "engagement": 0,
+        "family-support": 0,
+        "socio-economic": 0,
+    };
+
+    // Process main parent assessment items
+    mainParentAssessment.forEach(item => {
+        if (item.level) {
+            const category = assessmentMapping.mainParent[item.id as keyof typeof assessmentMapping.mainParent];
+            if (category) {
+                scores[category] = getScoreForLevel(item.level);
+            }
+        }
+    });
+
+    // Process external influence assessment items  
+    externalInfluenceAssessment.forEach(item => {
+        if (item.level) {
+            const category = assessmentMapping.externalInfluence[item.id as keyof typeof assessmentMapping.externalInfluence];
+            if (category) {
+                scores[category] = getScoreForLevel(item.level);
+            }
+        }
+    });
+
+    return scores;
+}
+
 // Calculate overall score from category scores
 export function calculateOverallScore(scores: CategoryScores): number {
     return Object.values(scores).reduce((sum, score) => sum + score, 0);

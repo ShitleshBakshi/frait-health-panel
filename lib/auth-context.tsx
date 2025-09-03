@@ -15,6 +15,11 @@ import { useMsal } from "@azure/msal-react"
 import { loginRequest } from "@/lib/msal-config"
 import { useRouter } from "next/navigation"
 
+// Check if authentication is enabled
+const isAuthEnabled = process.env.NEXT_PUBLIC_ENABLE_AUTHENTICATION === 'true';
+console.log('Auth Context - Environment variable NEXT_PUBLIC_ENABLE_AUTHENTICATION:', process.env.NEXT_PUBLIC_ENABLE_AUTHENTICATION);
+console.log('Auth Context - isAuthEnabled:', isAuthEnabled);
+
 // Define the User Role type to exactly match the backend
 export enum UserRole {
     ADMIN = "POW_EFRAIT_Admins",
@@ -70,15 +75,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isUnauthorized, setIsUnauthorized] = useState(false)
 
     // Create user object if we have an ID
+    console.log('AuthProvider - Redux user state:', reduxUser);
     const user = reduxUser.id ? {
         id: reduxUser.id,
         username: reduxUser.username,
         role: reduxUser.role as UserRole,
         healthBoard: reduxUser.healthBoard
     }: null;
+    console.log('AuthProvider - Computed user object:', user);
 
-    // Get MSAL instance
-    const { instance, accounts } = useMsal();
+    // Get MSAL instance only if authentication is enabled
+    let instance: any = null;
+    let accounts: any[] = [];
+    
+    if (isAuthEnabled) {
+        try {
+            const msalData = useMsal();
+            instance = msalData.instance;
+            accounts = msalData.accounts;
+        } catch (error) {
+            console.error('MSAL hooks not available:', error);
+        }
+    }
 
     // Auto login when the application starts
     useEffect(() => {
@@ -86,6 +104,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 setIsLoading(true);
                 setIsUnauthorized(false);
+
+                // If authentication is disabled, create a mock user and return
+                if (!isAuthEnabled) {
+                    console.log('Authentication disabled, creating mock Health Visitor user');
+                    const mockUser = {
+                        id: "dev-user-1",
+                        username: "Development User",
+                        role: UserRole.HEALTH_VISITOR, // Health Visitor role for development testing
+                        healthBoard: "Development Health Board"
+                    };
+                    
+                    console.log('Setting mock user:', mockUser);
+                    dispatch(setUser(mockUser));
+                    setError(null);
+                    
+                    // Use setTimeout to ensure Redux state update is processed
+                    setTimeout(() => {
+                        setIsLoading(false);
+                        console.log('Mock user setup complete, loading set to false');
+                    }, 100);
+                    return;
+                }
 
                 // MSAL authentication flow
                 if (accounts.length > 0) {
@@ -161,7 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
 
         attemptLogin();
-    }, [dispatch, instance, accounts, router]);
+    }, [dispatch, instance, accounts, router, isAuthEnabled]);
 
     // Function to validate token with backend
     const validateTokenWithBackend = async (token: string) => {
@@ -189,8 +229,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Clear Redux store
         dispatch(clearUser());
         
-        // Logout from MSAL
-        instance.logoutRedirect();
+        // Only use MSAL logout if authentication is enabled
+        if (isAuthEnabled) {
+            // Logout from MSAL
+            instance.logoutRedirect();
+        } else {
+            // For development mode, just redirect to login page
+            router.push('/login');
+        }
     }
 
     // Family assignment functions using Redux

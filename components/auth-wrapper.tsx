@@ -13,7 +13,19 @@ export const AuthWrapper = ({ children }: AuthWrapperProps) => {
         return <>{children}</>;
     }
 
-    // Only use MSAL authentication
+    // Check if authentication is enabled
+    const isAuthEnabled = process.env.NEXT_PUBLIC_ENABLE_AUTHENTICATION === 'true';
+
+    // If authentication is disabled, only wrap with AuthProvider (no MSAL)
+    if (!isAuthEnabled) {
+        return (
+            <AuthProvider>
+                {children}
+            </AuthProvider>
+        );
+    }
+
+    // Use full MSAL authentication
     return (
       <MSALAuthProvider>
         <AuthProvider>

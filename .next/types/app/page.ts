@@ -1,4 +1,4 @@
-// File: C:\Efrait\frontend\app\page.tsx
+// File: /Users/shitleshbakshi/FRAIT/WebstormProjects/Efrait_Stage_Frontend/frontend/app/page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
