@@ -28,7 +28,7 @@ class Query:
         :return: List of initial family entries
         """
         try:
-            dao = FraiAssessmentDAO(session=info.context.db_connection)
+            dao = FraiAssessmentDAO(session=info.context.db_session)
             frai_assessment = await dao.get_all_frai_assessment(
                 limit=limit,
                 offset=offset,

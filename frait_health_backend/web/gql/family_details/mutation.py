@@ -27,7 +27,7 @@ class Mutation:
         :param info: GraphQL context
         :return: Created family details with all related data
         """
-        dao = FamilyDetailsDAO(session=info.context.db_connection)
+        dao = FamilyDetailsDAO(session=info.context.db_session)
 
         # Extract supporting parents data
         supporting_parents = [

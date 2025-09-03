@@ -21,7 +21,7 @@ class Mutation:
         :param info: GraphQL context
         :return: True if the record was created
         """
-        dao = FraiAssessmentDAO(info.context.db_connection)
+        dao = FraiAssessmentDAO(info.context.db_session)
         assessment = await dao.create_frai_assessment(
             id=frai_input.id,
             assessmentid=frai_input.assessmentid,

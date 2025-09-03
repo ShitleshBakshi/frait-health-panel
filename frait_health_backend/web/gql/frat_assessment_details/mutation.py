@@ -21,7 +21,7 @@ class Mutation:
         :param frat_assessment_input: input model for frat assessment
         :param context: GraphQL context
         """
-        dao = FratAssessmentDAO(info.context.db_connection)
+        dao = FratAssessmentDAO(info.context.db_session)
         assessment = await dao.create_frat_assessment(
             id=frat_assessment_input.id,
             assessmentid=frat_assessment_input.assessmentid,

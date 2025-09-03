@@ -21,7 +21,7 @@ class Mutation:
         identity_provider: str = "local"
     ) -> UserModelDTO:
         """Creates user model in a database."""
-        dao = UserDAO(info.context.db_connection)
+        dao = UserDAO(info.context.db_session)
         user_role = UserRole(role)
         user = await dao.create_user(
             name=name,

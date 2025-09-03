@@ -21,7 +21,7 @@ class Mutation:
         :param info: GraphQL context
         :return: True if the record was created
         """
-        dao = InitialFamilyDAO(info.context.db_connection)
+        dao = InitialFamilyDAO(info.context.db_session)
         family = await dao.create_initial_family(
             family_name=input.family_name,
             child_dob=input.child_dob,

@@ -28,7 +28,7 @@ class Query:
         :return: List of initial family entries
         """
         try:
-            dao = InitialFamilyDAO(info.context.db_connection)
+            dao = InitialFamilyDAO(info.context.db_session)
             family = await dao.get_all_families(limit=limit, offset=offset)
             return family
         except Exception as e:

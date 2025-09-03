@@ -20,7 +20,7 @@ async def resolve_create_initial_family(
     :param info: GraphQL context
     :return: True if successful
     """
-    dao = InitialFamilyDAO(info.context.db_connection)
+    dao = InitialFamilyDAO(info.context.db_session)
     await dao.create_initial_family(
         family_name=family_input.family_name,
         child_dob=family_input.child_dob,

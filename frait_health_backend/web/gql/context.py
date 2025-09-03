@@ -70,7 +70,7 @@ class Context(BaseContext):
         db_connection: AsyncSession = Depends(get_db_session),
     ) -> None:
         self.redis_pool = redis_pool
-        self.db_connection = db_connection
+        self.db_session = db_connection
         self.request = request
         
         # Extract token from request

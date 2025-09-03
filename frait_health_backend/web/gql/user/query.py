@@ -40,7 +40,7 @@ class Query:
         user_id = info.context.user_context.id
         
         # Use the UserDAO to fetch the complete user model
-        user_dao = UserDAO(session=info.context.db_connection)
+        user_dao = UserDAO(session=info.context.db_session)
         user = await user_dao.get_user_by_id(user_id=user_id)
         
         if not user:
@@ -72,7 +72,7 @@ class Query:
         :param offset: offset of user objects, defaults to 0.
         :return: list of user objects from database.
         """
-        dao = UserDAO(session=info.context.db_connection)
+        dao = UserDAO(session=info.context.db_session)
         users = await dao.get_all_users(limit=limit, offset=offset)
         return [
             UserModelDTO(
@@ -105,7 +105,7 @@ class Query:
         :param role: role of the user.
         :return: list of filtered user objects from database.
         """
-        dao = UserDAO(session=info.context.db_connection)
+        dao = UserDAO(session=info.context.db_session)
         from frait_health_backend.db.models.user_model import UserRole
 
         user_role = UserRole(role) if role else None
